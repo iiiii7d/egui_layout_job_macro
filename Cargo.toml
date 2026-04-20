@@ -1,0 +1,15 @@
+[package]
+name = "egui_layout_job_macro"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "=1.0.106"
+syn = "=2.0.117"
+quote = "=1.0.45"
+
+[dev-dependencies]
+egui = "=0.34.1"
