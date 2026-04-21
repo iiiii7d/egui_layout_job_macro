@@ -1,16 +1,15 @@
-use std::{borrow::Cow, collections::HashMap};
+use std::collections::HashMap;
 
 use itertools::Itertools;
-use proc_macro2::{Ident, Span, TokenStream};
+use proc_macro2::{Ident, TokenStream};
 use quote::{ToTokens, TokenStreamExt, quote};
 use syn::{
-    Expr, ExprAssign, ExprLit, ExprPath, FieldValue, Lit, LitByteStr, LitStr, Token, braced,
+    Expr, ExprAssign, ExprLit, ExprPath, Lit, LitByteStr, Token,
     bracketed, parenthesized,
     parse::{End, Parse, ParseStream},
-    parse_macro_input, parse_quote,
+    parse_macro_input,
     punctuated::Punctuated,
-    spanned::Spanned,
-    token::{Brace, Bracket, DotDot, Paren, Token},
+    token::{Bracket, Paren},
 };
 
 fn expr2ident(expr: &Expr) -> Option<&Ident> {
@@ -23,22 +22,23 @@ fn expr2ident(expr: &Expr) -> Option<&Ident> {
 #[derive(Clone, Default)]
 struct TextFormat(pub HashMap<Ident, TokenStream>);
 impl ToTokens for TextFormat {
-    fn to_tokens(&self, token_stream: &mut TokenStream) {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         if self.0.is_empty() {
-            token_stream.append_all(quote! { egui::text::TextFormat::default() });
+            tokens.append_all(quote! { egui::text::TextFormat::default() });
             return;
         }
         let contents = self.0.iter().map(|(k, v)| quote! { #k: #v });
-        token_stream.append_all(quote! {
+        tokens.append_all(quote! {
             egui::text::TextFormat {
                 #(#contents),*,
                 ..egui::text::TextFormat::default()
             }
-        })
+        });
     }
 }
 impl TextFormat {
     fn process_font_family(input: &Expr) -> TokenStream {
+        #[expect(clippy::option_if_let_else)]
         if let Some(input) = expr2ident(input) {
             match &*input.to_string() {
                 "mono" | "monospace" => quote! { egui::FontFamily::Monospace },
@@ -59,8 +59,7 @@ impl TextFormat {
         match input.iter().count() {
             1 => {
                 let value = input.iter().exactly_one().map_err(|_| ()).unwrap();
-                if let Some(value) = expr2ident(value) {
-                    match &*value.to_string() {
+                expr2ident(value).map_or_else(|| value.to_token_stream(), |value| match &*value.to_string() {
                         "transparent" => quote! { egui::Color32::TRANSPARENT },
                         "black" => quote! { egui::Color32::BLACK },
                         "dark_gray" | "dark_grey" => quote! { egui::Color32::DARK_GRAY },
@@ -90,10 +89,7 @@ impl TextFormat {
                         }
                         "placeholder" => quote! { egui::Color32::PLACEHOLDER },
                         _ => value.to_token_stream(),
-                    }
-                } else {
-                    value.to_token_stream()
-                }
+                    })
             }
             3 => {
                 let mut it = input.iter();
@@ -173,46 +169,36 @@ impl TextFormat {
                         panic!();
                     };
                     let right = Self::process_float(right);
-                    if let Some(left) = expr2ident(left) {
+                    expr2ident(left).map_or_else(|| quote! { (#left, #right) }, |left| {
                         let left = LitByteStr::new(left.to_string().as_bytes(), left.span());
                         quote! { (#left, #right) }
-                    } else {
-                        quote! { (#left, #right) }
-                    }
+                    })
                 });
                 quote! { egui::epaint::text::VariationCoords::new([#(#values),*]) }
             }),
             ("italics", value) => (
                 keyword.clone(),
-                if let Some(value) = value {
-                    value
+                value.map_or_else(|| quote!(true), |value| value
                         .iter()
                         .exactly_one()
                         .map_err(|_| ())
                         .unwrap()
-                        .to_token_stream()
-                } else {
-                    quote!(true)
-                },
+                        .to_token_stream()),
             ),
             ("underline" | "strikethrough", Some(value)) => (keyword.clone(), {
                 let mut it = value.iter();
                 let width = Self::process_float(it.next().expect(""));
-                let colour = Self::process_colour(&Punctuated::from_iter(it.cloned()));
+                let colour = Self::process_colour(&it.cloned().collect());
                 quote! { egui::Stroke::new(#width, #colour) }
             }),
             ("valign", Some(value)) => (keyword.clone(), {
                 let value = value.iter().exactly_one().map_err(|_| ()).unwrap();
-                if let Some(value) = expr2ident(value) {
-                    match &*value.to_string() {
+                expr2ident(value).map_or_else(|| value.to_token_stream(), |value| match &*value.to_string() {
                         "min" => quote! { egui::Align::Min },
                         "center" | "centre" => quote! { egui::Align::Center },
                         "max" => quote! { egui::Align::Max },
                         _ => value.to_token_stream(),
-                    }
-                } else {
-                    value.to_token_stream()
-                }
+                    })
             }),
             (_, None) => panic!(),
             (_, Some(value)) => (keyword.clone(), quote! {(#value)}),
@@ -223,14 +209,14 @@ impl TextFormat {
 
 struct InputLayoutJob {
     pub in_tok: Token![in],
-    pub input_layout_job: Expr,
+    pub contents: Expr,
     pub colon_tok: Token![:],
 }
 impl Parse for InputLayoutJob {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
             in_tok: input.parse()?,
-            input_layout_job: input.parse()?,
+            contents: input.parse()?,
             colon_tok: input.parse()?,
         })
     }
@@ -243,7 +229,7 @@ enum InputSegment {
         brackets: Option<Bracket>,
         argument: Option<Punctuated<Expr, Token![,]>>,
         parentheses: Paren,
-        segments: Vec<InputSegment>,
+        segments: Vec<Self>,
     },
     Text(Expr),
 }
@@ -255,7 +241,7 @@ impl Parse for InputSegment {
             let (brackets, argument) = if input.peek(Bracket) {
                 let content;
                 let brackets = bracketed!(content in input);
-                let argument = content.parse_terminated(|s| s.parse(), Token![,])?;
+                let argument = content.parse_terminated(syn::parse::ParseBuffer::parse, Token![,])?;
                 if !content.peek(End) {
                     return Err(content.error(""));
                 }
@@ -283,9 +269,9 @@ impl Parse for InputSegment {
     }
 }
 impl InputSegment {
-    fn tokens(&self, token_stream: &mut TokenStream, text_format: &TextFormat) {
+    fn tokens(&self, tokens: &mut TokenStream, text_format: &TextFormat) {
         match self {
-            Self::Text(expr) => token_stream.append_all(quote! {
+            Self::Text(expr) => tokens.append_all(quote! {
                 layout_job.append(
                     &(#expr).to_string(),
                     0.0,
@@ -301,7 +287,7 @@ impl InputSegment {
                 for segment in segments {
                     let mut text_format2 = text_format.to_owned();
                     text_format2.insert(keyword, argument.as_ref());
-                    segment.tokens(token_stream, &text_format2);
+                    segment.tokens(tokens, &text_format2);
                 }
             }
         }
@@ -331,13 +317,13 @@ impl Parse for InputArgs {
 }
 
 #[proc_macro]
-pub fn layout_job(token_stream: proc_macro::TokenStream) -> proc_macro::TokenStream {
+pub fn layout_job(tokens: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let InputArgs {
         input_layout_job,
         segments,
-    } = parse_macro_input!(token_stream as InputArgs);
+    } = parse_macro_input!(tokens as InputArgs);
     let layout_job_tokens = if let Some(InputLayoutJob {
-        input_layout_job, ..
+                                            contents: input_layout_job, ..
     }) = input_layout_job
     {
         input_layout_job.to_token_stream()
