@@ -1,8 +1,28 @@
-use proc_macro2::{Ident, TokenStream};
+use std::collections::HashMap;
+use proc_macro2::{Ident, Span, TokenStream};
 use quote::{quote, ToTokens, TokenStreamExt};
-use syn::{Expr, FieldValue, LitStr, Token, braced, parse::{Parse, ParseStream}, parse_macro_input, punctuated::Punctuated, token::{Brace, DotDot}, bracketed, parenthesized};
+use syn::{Expr, FieldValue, LitStr, Token, braced, parse::{Parse, ParseStream}, parse_macro_input, punctuated::Punctuated, token::{Brace, DotDot}, bracketed, parenthesized, ExprLit, parse_quote};
 use syn::parse::End;
 use syn::token::{Bracket, Paren, Token};
+
+#[derive(Clone, Default)]
+struct TextFormat(pub HashMap<Ident, Expr>);
+impl ToTokens for TextFormat {
+    fn to_tokens(&self, token_stream: &mut TokenStream) {
+        if self.0.is_empty() {
+            token_stream.append_all(quote! { egui::text::TextFormat::default() });
+            return;
+        }
+        let contents = self.0.iter()
+            .map(|(k, v)| quote!{ #k: #v });
+        token_stream.append_all(quote! {
+            egui::text::TextFormat {
+                #(#contents),*,
+                ..egui::text::TextFormat::default()
+            }
+        })
+    }
+}
 
 struct InputLayoutJob {
     pub in_tok: Token![in],
@@ -48,8 +68,8 @@ impl Parse for InputSegment {
             let content;
             let parentheses = parenthesized!(content in input);
             let mut segments = Vec::new();
-            while !input.peek(End) {
-                segments.push(input.parse()?);
+            while !content.peek(End) {
+                segments.push(content.parse()?);
             }
             Ok(Self::Formatting {
                 at_tok,
@@ -64,17 +84,24 @@ impl Parse for InputSegment {
     }
 }
 impl InputSegment {
-    fn tokens(&self, token_stream: &mut TokenStream) {
+    fn tokens(&self, token_stream: &mut TokenStream, text_format: &TextFormat) {
         match self {
-            Self::Text(expr) => token_stream.append_all(quote! {
-                layout_job.append(
-                    &(#expr).to_string(),
-                    0.0,
-                    egui::text::TextFormat::default(),
-                );
-            }),
+            Self::Text(expr) => {
+                token_stream.append_all(quote! {
+                    layout_job.append(
+                        &(#expr).to_string(),
+                        0.0,
+                        #text_format,
+                    );
+                })
+            },
             Self::Formatting { keyword, argument, segments, .. } => for segment in segments {
-                segment.tokens(token_stream);
+                let mut text_format2 = text_format.to_owned();
+                text_format2.0.insert(keyword.clone(), argument.as_ref().map_or_else(|| {
+                    let expr: Expr = parse_quote!(true);
+                    expr
+                }, |(_, expr)| expr.clone()));
+                segment.tokens(token_stream, &text_format2);
             }
         }
     }
@@ -86,7 +113,7 @@ struct InputArgs {
 }
 impl Parse for InputArgs {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let input_layout_job = if input.peek2(Token![in]) {
+        let input_layout_job = if input.peek(Token![in]) {
             Some(InputLayoutJob::parse(input)?)
         } else {
             None
@@ -110,8 +137,9 @@ pub fn layout_job(token_stream: proc_macro::TokenStream) -> proc_macro::TokenStr
         quote! { egui::text::LayoutJob::default() }
     };
     let mut segment_tokens = TokenStream::new();
+    let text_format = TextFormat::default();
     for segment in segments {
-        segment.tokens(&mut segment_tokens);
+        segment.tokens(&mut segment_tokens, &text_format);
     };
     quote! {{
         let mut layout_job = #layout_job_tokens;
