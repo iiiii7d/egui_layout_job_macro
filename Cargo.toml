@@ -11,5 +11,7 @@ proc-macro2 = "=1.0.106"
 syn = { version = "=2.0.117", features = ["full"] }
 quote = "=1.0.45"
 
+itertools = "=0.14.0"
+
 [dev-dependencies]
 egui = "=0.34.1"
