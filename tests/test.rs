@@ -1,8 +1,6 @@
 use std::os::unix::raw::dev_t;
 
-use egui::{
-    Align, Color32, FontFamily, Stroke, TextFormat, epaint::text::VariationCoords, text::LayoutJob,
-};
+use egui::{Align, Color32, FontFamily, Stroke, TextFormat, epaint::text::VariationCoords, text::LayoutJob, hex_color};
 use egui_layout_job_macro::layout_job;
 
 #[test]
@@ -254,7 +252,33 @@ fn format_color() {
         );
         l
     });
+    assert_eq!(layout_job!(@red("a")), {
+        let mut l = LayoutJob::default();
+        l.append(
+            "a",
+            0.0,
+            TextFormat {
+                color: Color32::RED,
+                ..TextFormat::default()
+            },
+        );
+        l
+    });
+    assert_eq!(layout_job!(@color["ff0000"]("a")), {
+        let mut l = LayoutJob::default();
+        l.append(
+            "a",
+            0.0,
+            TextFormat {
+                color: hex_color!("ff0000"),
+                ..TextFormat::default()
+            },
+        );
+        l
+    });
 }
+
+
 #[test]
 fn format_background() {
     assert_eq!(layout_job!(@background[1, 2, 3]("a")), {
@@ -431,7 +455,19 @@ fn format_and_non_format() {
             },
         );
         l.append("c", 0.0, TextFormat::default());
-
         l
     });
+}
+
+#[test]
+fn format_existing_text_format() {
+    let tf = TextFormat {
+        color: Color32::RED,
+        ..TextFormat::default()
+    };
+    assert_eq!(layout_job!(@[tf]("a")), {
+        let mut l = LayoutJob::default();
+        l.append("a", 0.0, tf);
+        l
+    })
 }
