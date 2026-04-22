@@ -15,6 +15,7 @@ itertools = "=0.14.0"
 
 [dev-dependencies]
 egui = { version = "=0.34.1", features = ["color-hex"] }
+duplicate = "=2.0.1"
 
 [lints.rust]
 future-incompatible = "deny"

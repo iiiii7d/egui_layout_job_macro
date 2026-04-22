@@ -9,7 +9,7 @@ use syn::{
     parse_macro_input,
     punctuated::Punctuated,
     spanned::Spanned,
-    token::{Bracket, For, Paren},
+    token::{Bracket, Paren},
 };
 
 fn expr2ident(expr: &Expr) -> Option<&Ident> {
@@ -138,15 +138,16 @@ impl TextFormat {
             Expr::Lit(ExprLit {
                 lit: Lit::Float(value),
                 ..
-            }) => quote! { #value },
+            }) => quote! { #value as f32 },
             Expr::Lit(ExprLit {
                 lit: Lit::Int(value),
                 ..
-            }) => quote! { (#value as f32) },
+            }) => quote! { #value as f32 },
             value => value.to_token_stream(),
         }
     }
-    fn insert(&mut self, f: &FormattingFunction) -> syn::Result<()> {
+    #[expect(clippy::too_many_lines)]
+    fn insert(&mut self, f: &FormatAttr) -> syn::Result<()> {
         let (k, v) = match &*f.key_string() {
             "font_id" => (f.key.clone(), {
                 match f.args_count() {
@@ -168,7 +169,7 @@ impl TextFormat {
                     Expr::Lit(ExprLit {
                         lit: Lit::Float(value),
                         ..
-                    }) => quote! { Some(#value) },
+                    }) => quote! { Some(#value as f32) },
                     Expr::Lit(ExprLit {
                         lit: Lit::Int(value),
                         ..
@@ -176,11 +177,11 @@ impl TextFormat {
                     value => value.to_token_stream(),
                 },
             ),
-            key @ ("color" | "background" | "bg") => (
-                if key == "bg" {
-                    Ident::new("background", f.key.span())
-                } else {
-                    f.key.clone()
+            key @ ("color" | "colour" | "col" | "background" | "bg") => (
+                match key {
+                    "colour" | "col" => Ident::new("color", f.key.span()),
+                    "bg" => Ident::new("background", f.key.span()),
+                    _ => f.key.clone(),
                 },
                 Self::process_colour(&f.args),
             ),
@@ -283,12 +284,12 @@ impl Parse for InputLayoutJob {
     }
 }
 
-struct FormattingFunction {
+struct FormatAttr {
     pub key: Ident,
     pub brackets: Option<Bracket>,
     pub args: Punctuated<Expr, Token![,]>,
 }
-impl Parse for FormattingFunction {
+impl Parse for FormatAttr {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let key = input.parse()?;
         let (brackets, args) = if input.peek(Bracket) {
@@ -309,7 +310,7 @@ impl Parse for FormattingFunction {
         })
     }
 }
-impl FormattingFunction {
+impl FormatAttr {
     pub fn key_string(&self) -> String {
         self.key.to_string()
     }
@@ -323,14 +324,14 @@ impl FormattingFunction {
         self.args
             .iter()
             .exactly_one()
-            .map_err(|e| syn::Error::new(self.args.span(), ""))
+            .map_err(|_e| syn::Error::new(self.args.span(), ""))
     }
 }
 
 enum InputSegment {
-    Formatting {
+    FormatAttr {
         at_tok: Token![@],
-        function: FormattingFunction,
+        attr: FormatAttr,
         parentheses: Paren,
         segments: Vec<Self>,
     },
@@ -377,9 +378,9 @@ impl Parse for InputSegment {
                 while !content.peek(End) {
                     segments.push(content.parse()?);
                 }
-                Ok(Self::Formatting {
+                Ok(Self::FormatAttr {
                     at_tok,
-                    function,
+                    attr: function,
                     parentheses,
                     segments,
                 })
@@ -405,8 +406,8 @@ impl InputSegment {
                     segment.tokens(tokens, &text_format2)?;
                 }
             }
-            Self::Formatting {
-                function, segments, ..
+            Self::FormatAttr {
+                attr: function, segments, ..
             } => {
                 for segment in segments {
                     let mut text_format2 = text_format.to_owned();
@@ -471,10 +472,10 @@ pub fn layout_job(tokens: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
 #[proc_macro]
 pub fn text_format(tokens: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let attrs = parse_macro_input!(tokens with Punctuated<FormattingFunction, Token![,]>::parse_terminated);
+    let attrs = parse_macro_input!(tokens with Punctuated<FormatAttr, Token![,]>::parse_terminated);
     let mut tf = TextFormat::new();
-    for f in attrs {
-        tf.insert(&f).unwrap();
+    for attr in attrs {
+        tf.insert(&attr).unwrap();
     }
     tf.to_token_stream().into()
 }
