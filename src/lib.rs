@@ -433,7 +433,7 @@ impl InputSegment {
             Self::Text(expr) => tokens.append_all(quote! {
                 layout_job.append(
                     &(#expr).to_string(),
-                    0.0,
+                    1.0,
                     #text_format,
                 );
             }),

@@ -15,7 +15,7 @@ fn empty() {
 fn one_literal() {
     assert_eq!(layout_job!("foobar"), {
         let mut l = LayoutJob::default();
-        l.append("foobar", 0.0, TextFormat::default());
+        l.append("foobar", 1.0, TextFormat::default());
         l
     });
 }
@@ -24,8 +24,8 @@ fn one_literal() {
 fn two_literals() {
     assert_eq!(layout_job!("foo""bar"), {
         let mut l = LayoutJob::default();
-        l.append("foo", 0.0, TextFormat::default());
-        l.append("bar", 0.0, TextFormat::default());
+        l.append("foo", 1.0, TextFormat::default());
+        l.append("bar", 1.0, TextFormat::default());
         l
     });
 }
@@ -34,9 +34,9 @@ fn two_literals() {
 fn three_literals() {
     assert_eq!(layout_job!("foo"123"bar"), {
         let mut l = LayoutJob::default();
-        l.append("foo", 0.0, TextFormat::default());
-        l.append("123", 0.0, TextFormat::default());
-        l.append("bar", 0.0, TextFormat::default());
+        l.append("foo", 1.0, TextFormat::default());
+        l.append("123", 1.0, TextFormat::default());
+        l.append("bar", 1.0, TextFormat::default());
         l
     });
 }
@@ -46,7 +46,7 @@ fn one_ident() {
     let variable = 123456;
     assert_eq!(layout_job!(variable), {
         let mut l = LayoutJob::default();
-        l.append(&variable.to_string(), 0.0, TextFormat::default());
+        l.append(&variable.to_string(), 1.0, TextFormat::default());
         l
     });
 }
@@ -58,9 +58,9 @@ fn variety() {
         layout_job!('a' variable format!("{:.2}", std::f32::consts::PI)),
         {
             let mut l = LayoutJob::default();
-            l.append("a", 0.0, TextFormat::default());
-            l.append(&variable.to_string(), 0.0, TextFormat::default());
-            l.append("3.14", 0.0, TextFormat::default());
+            l.append("a", 1.0, TextFormat::default());
+            l.append(&variable.to_string(), 1.0, TextFormat::default());
+            l.append("3.14", 1.0, TextFormat::default());
             l
         }
     );
@@ -74,7 +74,7 @@ fn from_existing_layout_job() {
     };
     assert_eq!(layout_job!(in l2.clone(): 'a'), {
         let mut l = l2;
-        l.append("a", 0.0, TextFormat::default());
+        l.append("a", 1.0, TextFormat::default());
         l
     });
 }
@@ -85,7 +85,7 @@ fn format_nested() {
         let mut l = LayoutJob::default();
         l.append(
             "a",
-            0.0,
+            1.0,
             TextFormat {
                 color: Color32::RED,
                 background: Color32::BLUE,
@@ -100,16 +100,16 @@ fn format_nested() {
 fn format_and_non_format() {
     assert_eq!(layout_job!("a" @color[red]("b") "c"), {
         let mut l = LayoutJob::default();
-        l.append("a", 0.0, TextFormat::default());
+        l.append("a", 1.0, TextFormat::default());
         l.append(
             "b",
-            0.0,
+            1.0,
             TextFormat {
                 color: Color32::RED,
                 ..TextFormat::default()
             },
         );
-        l.append("c", 0.0, TextFormat::default());
+        l.append("c", 1.0, TextFormat::default());
         l
     });
 }
@@ -119,7 +119,7 @@ fn format_existing_text_format() {
     let tf = text_format!(red);
     assert_eq!(layout_job!(@[tf]("a")), {
         let mut l = LayoutJob::default();
-        l.append("a", 0.0, tf);
+        l.append("a", 1.0, tf);
         l
     })
 }
