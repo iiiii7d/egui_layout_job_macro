@@ -123,3 +123,12 @@ fn format_existing_text_format() {
         l
     })
 }
+
+#[test]
+fn raw() {
+    assert_eq!(layout_job!(#("a", 1.0, TextFormat::default())), {
+        let mut l = LayoutJob::default();
+        l.append("a", 1.0, TextFormat::default());
+        l
+    })
+}

@@ -380,56 +380,71 @@ enum InputSegment {
         segments: Vec<Self>,
     },
     Text(Expr),
+    Raw {
+        #[expect(dead_code)]
+        pound_tok: Token![#],
+        tuple: Expr,
+    },
 }
 impl Parse for InputSegment {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        if input.peek(Token![@]) {
-            let at_tok = input.parse()?;
-            if input.peek(Bracket) {
-                let content;
-                let brackets = bracketed!(content in input);
-                let expr = content.parse()?;
-                if !content.peek(End) {
-                    return Err(content.error(""));
-                }
+        if input.peek(Token![#]) {
+            return Ok(Self::Raw {
+                pound_tok: input.parse()?,
+                tuple: input.parse()?,
+            })
+        }
+        if !(input.peek(Token![@])) {
+            return Ok(Self::Text(input.parse::<Expr>()?));
+        }
 
-                let content;
-                let parentheses = parenthesized!(content in input);
-                let mut segments = Vec::new();
-                while !content.peek(End) {
-                    segments.push(content.parse()?);
-                }
-                Ok(Self::TextFormat {
-                    at_tok,
-                    brackets,
-                    expr,
-                    parentheses,
-                    segments,
-                })
-            } else {
-                let function = input.parse()?;
-
-                let content;
-                let parentheses = parenthesized!(content in input);
-                let mut segments = Vec::new();
-                while !content.peek(End) {
-                    segments.push(content.parse()?);
-                }
-                Ok(Self::FormatAttr {
-                    at_tok,
-                    attr: function,
-                    parentheses,
-                    segments,
-                })
+        let at_tok = input.parse()?;
+        if input.peek(Bracket) {
+            let content;
+            let brackets = bracketed!(content in input);
+            let expr = content.parse()?;
+            if !content.peek(End) {
+                return Err(content.error(""));
             }
+
+            let content;
+            let parentheses = parenthesized!(content in input);
+            let mut segments = Vec::new();
+            while !content.peek(End) {
+                segments.push(content.parse()?);
+            }
+            Ok(Self::TextFormat {
+                at_tok,
+                brackets,
+                expr,
+                parentheses,
+                segments,
+            })
         } else {
-            Ok(Self::Text(input.parse::<Expr>()?))
+            let function = input.parse()?;
+
+            let content;
+            let parentheses = parenthesized!(content in input);
+            let mut segments = Vec::new();
+            while !content.peek(End) {
+                segments.push(content.parse()?);
+            }
+            Ok(Self::FormatAttr {
+                at_tok,
+                attr: function,
+                parentheses,
+                segments,
+            })
         }
     }
 }
 impl InputSegment {
     fn tokens(&self, tokens: &mut TokenStream, text_format: &TextFormat) -> syn::Result<()> {
         match self {
+            Self::Raw { tuple, .. } => tokens.append_all(quote! {
+                let (string, leading_space, text_format) = #tuple;
+                layout_job.append(string, leading_space, text_format);
+            }),
             Self::Text(expr) => tokens.append_all(quote! {
                 layout_job.append(
                     &(#expr).to_string(),
