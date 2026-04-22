@@ -272,8 +272,7 @@ impl TextFormat {
             key => {
                 if let Ok(value) = f.get_one_arg() {
                     (f.key.clone(), value.to_token_stream())
-                } else if f.args_count() == 0
-                {
+                } else if f.args_count() == 0 {
                     #[expect(clippy::option_if_let_else)]
                     if let Some(colour) =
                         Self::colour2tokens(key.strip_prefix("bg_").unwrap_or(key))
@@ -300,8 +299,10 @@ impl TextFormat {
 }
 
 struct InputLayoutJob {
+    #[expect(dead_code)]
     pub in_tok: Token![in],
     pub contents: Expr,
+    #[expect(dead_code)]
     pub colon_tok: Token![:],
 }
 impl Parse for InputLayoutJob {
@@ -316,6 +317,7 @@ impl Parse for InputLayoutJob {
 
 struct FormatAttr {
     pub key: Ident,
+    #[expect(dead_code)]
     pub brackets: Option<Bracket>,
     pub args: Punctuated<Expr, Token![,]>,
 }
@@ -360,15 +362,20 @@ impl FormatAttr {
 
 enum InputSegment {
     FormatAttr {
+        #[expect(dead_code)]
         at_tok: Token![@],
         attr: FormatAttr,
+        #[expect(dead_code)]
         parentheses: Paren,
         segments: Vec<Self>,
     },
     TextFormat {
+        #[expect(dead_code)]
         at_tok: Token![@],
+        #[expect(dead_code)]
         brackets: Bracket,
         expr: Expr,
+        #[expect(dead_code)]
         parentheses: Paren,
         segments: Vec<Self>,
     },
