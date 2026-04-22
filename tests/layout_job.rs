@@ -4,7 +4,7 @@ use egui::{
     Align, Color32, FontFamily, Stroke, TextFormat, epaint::text::VariationCoords, hex_color,
     text::LayoutJob,
 };
-use egui_layout_job_macro::layout_job;
+use egui_layout_job_macro::{layout_job, text_format};
 
 #[test]
 fn empty() {
@@ -512,10 +512,7 @@ fn format_and_non_format() {
 
 #[test]
 fn format_existing_text_format() {
-    let tf = TextFormat {
-        color: Color32::RED,
-        ..TextFormat::default()
-    };
+    let tf = text_format!(red);
     assert_eq!(layout_job!(@[tf]("a")), {
         let mut l = LayoutJob::default();
         l.append("a", 0.0, tf);

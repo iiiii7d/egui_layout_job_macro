@@ -468,3 +468,13 @@ pub fn layout_job(tokens: proc_macro::TokenStream) -> proc_macro::TokenStream {
     }}
     .into()
 }
+
+#[proc_macro]
+pub fn text_format(tokens: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let attrs = parse_macro_input!(tokens with Punctuated<FormattingFunction, Token![,]>::parse_terminated);
+    let mut tf = TextFormat::new();
+    for f in attrs {
+        tf.insert(&f).unwrap();
+    }
+    tf.to_token_stream().into()
+}
