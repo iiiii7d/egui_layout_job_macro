@@ -1,17 +1,20 @@
 use duplicate::duplicate_item;
-use egui::text::LayoutJob;
-use egui::{Align, Color32, FontFamily, FontId, Stroke, TextFormat};
-use egui::epaint::text::VariationCoords;
+use egui::{
+    Align, Color32, FontFamily, FontId, Stroke, TextFormat, epaint::text::VariationCoords,
+    text::LayoutJob,
+};
 use egui_layout_job_macro::{layout_job, text_format};
-
 
 #[test]
 fn font_id_expr() {
     let font_id = FontId::new(10.0, FontFamily::Proportional);
-    assert_eq!(text_format!(font_id[font_id.clone()]), TextFormat {
-        font_id,
-        ..TextFormat::default()
-    });
+    assert_eq!(
+        text_format!(font_id[font_id.clone()]),
+        TextFormat {
+            font_id,
+            ..TextFormat::default()
+        }
+    );
 }
 #[duplicate_item(
     test_name v1 v2;
@@ -21,10 +24,43 @@ fn font_id_expr() {
 )]
 #[test]
 fn test_name() {
-    assert_eq!(text_format!(font_id[10.0, v1]), TextFormat {
-        font_id: FontId::new(10.0, v2),
-        ..TextFormat::default()
-    });
+    assert_eq!(
+        text_format!(font_id[10.0, v1]),
+        TextFormat {
+            font_id: FontId::new(10.0, v2),
+            ..TextFormat::default()
+        }
+    );
+}
+#[test]
+fn font_id_sugar_size() {
+    assert_eq!(
+        text_format!(size[1.0]),
+        TextFormat {
+            font_id: FontId::new(1.0, FontFamily::Proportional),
+            ..TextFormat::default()
+        }
+    );
+}
+#[test]
+fn font_id_sugar_font_family() {
+    assert_eq!(
+        text_format!(font_family[mono]),
+        TextFormat {
+            font_id: FontId::new(14.0, FontFamily::Monospace),
+            ..TextFormat::default()
+        }
+    );
+}
+#[test]
+fn font_id_sugar_mono() {
+    assert_eq!(
+        text_format!(mono),
+        TextFormat {
+            font_id: FontId::new(14.0, FontFamily::Monospace),
+            ..TextFormat::default()
+        }
+    );
 }
 
 #[duplicate_item(
@@ -38,10 +74,13 @@ fn test_name() {
 )]
 #[test]
 fn test_name() {
-    assert_eq!(text_format!(attr[val]), TextFormat {
-        attr: 1.0,
-        ..TextFormat::default()
-    });
+    assert_eq!(
+        text_format!(attr[val]),
+        TextFormat {
+            attr: 1.0,
+            ..TextFormat::default()
+        }
+    );
 }
 
 #[duplicate_item(
@@ -52,10 +91,13 @@ fn test_name() {
 )]
 #[test]
 fn test_name() {
-    assert_eq!(text_format!(line_height[val]), TextFormat {
-        line_height: Some(1.0),
-        ..TextFormat::default()
-    });
+    assert_eq!(
+        text_format!(line_height[val]),
+        TextFormat {
+            line_height: Some(1.0),
+            ..TextFormat::default()
+        }
+    );
 }
 
 #[duplicate_item(
@@ -74,35 +116,47 @@ fn test_name() {
 )]
 #[test]
 fn test_name() {
-    assert_eq!(text_format!(attr1[val]), TextFormat {
-        attr2: Color32::RED,
-        ..TextFormat::default()
-    });
+    assert_eq!(
+        text_format!(attr1[val]),
+        TextFormat {
+            attr2: Color32::RED,
+            ..TextFormat::default()
+        }
+    );
 }
 
 #[test]
-fn red() {
-    assert_eq!(text_format!(red), TextFormat {
-        color: Color32::RED,
-        ..TextFormat::default()
-    });
+fn color_sugar_red() {
+    assert_eq!(
+        text_format!(red),
+        TextFormat {
+            color: Color32::RED,
+            ..TextFormat::default()
+        }
+    );
 }
 #[test]
-fn bg_red() {
-    assert_eq!(text_format!(bg_red), TextFormat {
-        background: Color32::RED,
-        ..TextFormat::default()
-    });
+fn background_sugar_bg_red() {
+    assert_eq!(
+        text_format!(bg_red),
+        TextFormat {
+            background: Color32::RED,
+            ..TextFormat::default()
+        }
+    );
 }
 
 #[test]
 fn coords() {
     let tag = b"abcd";
     let value = 123.0f32;
-    assert_eq!(text_format!(coords[wght=500.0,b"wdth"=75,(tag)=value]), TextFormat {
-        coords: VariationCoords::new([(b"wght", 500.0), (b"wdth", 75.0), (tag, value)]),
-        ..TextFormat::default()
-    });
+    assert_eq!(
+        text_format!(coords[wght=500.0,b"wdth"=75,(tag)=value]),
+        TextFormat {
+            coords: VariationCoords::new([(b"wght", 500.0), (b"wdth", 75.0), (tag, value)]),
+            ..TextFormat::default()
+        }
+    );
 }
 
 #[duplicate_item(
@@ -113,10 +167,13 @@ fn coords() {
 )]
 #[test]
 fn test_name() {
-    assert_eq!(text_format!(attr[val]), TextFormat {
-        italics: true,
-        ..TextFormat::default()
-    });
+    assert_eq!(
+        text_format!(attr[val]),
+        TextFormat {
+            italics: true,
+            ..TextFormat::default()
+        }
+    );
 }
 
 #[duplicate_item(
@@ -142,10 +199,13 @@ fn test_name() {
 )]
 #[test]
 fn test_name() {
-    assert_eq!(text_format!(attr1[val]), TextFormat {
-        attr2: Stroke::new(1.0f32, Color32::GRAY),
-        ..TextFormat::default()
-    });
+    assert_eq!(
+        text_format!(attr1[val]),
+        TextFormat {
+            attr2: Stroke::new(1.0f32, Color32::GRAY),
+            ..TextFormat::default()
+        }
+    );
 }
 
 #[duplicate_item(
@@ -155,11 +215,14 @@ fn test_name() {
 )]
 #[test]
 fn test_name() {
-    assert_eq!(text_format!(red, attr), TextFormat {
-        color: Color32::RED,
-        attr: Stroke::new(1.0f32, Color32::RED),
-        ..TextFormat::default()
-    });
+    assert_eq!(
+        text_format!(red, attr),
+        TextFormat {
+            color: Color32::RED,
+            attr: Stroke::new(1.0f32, Color32::RED),
+            ..TextFormat::default()
+        }
+    );
 }
 
 #[duplicate_item(
@@ -172,17 +235,34 @@ fn test_name() {
 )]
 #[test]
 fn test_name() {
-    assert_eq!(text_format!(valign[val1]), TextFormat {
-        valign: val2,
-        ..TextFormat::default()
-    });
+    assert_eq!(
+        text_format!(valign[val1]),
+        TextFormat {
+            valign: val2,
+            ..TextFormat::default()
+        }
+    );
+}
+
+#[test]
+fn valign_sugar_min() {
+    assert_eq!(
+        text_format!(min),
+        TextFormat {
+            valign: Align::Min,
+            ..TextFormat::default()
+        }
+    )
 }
 
 #[test]
 fn two_attributes() {
-    assert_eq!(text_format!(expand_bg[1.0], i), TextFormat {
-        expand_bg: 1.0,
-        italics: true,
-        ..TextFormat::default()
-    },);
+    assert_eq!(
+        text_format!(expand_bg[1.0], i),
+        TextFormat {
+            expand_bg: 1.0,
+            italics: true,
+            ..TextFormat::default()
+        },
+    );
 }

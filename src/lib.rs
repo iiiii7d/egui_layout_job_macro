@@ -106,6 +106,14 @@ impl TextFormat {
             _ => return None,
         })
     }
+    fn align2tokens(input: &str) -> Option<TokenStream> {
+        Some(match input {
+            "min" => quote! { egui::Align::Min },
+            "center" | "centre" => quote! { egui::Align::Center },
+            "max" => quote! { egui::Align::Max },
+            _ => return None,
+        })
+    }
     fn process_colour(input: &Punctuated<Expr, Token![,]>) -> TokenStream {
         match input.iter().count() {
             1 => {
@@ -221,7 +229,9 @@ impl TextFormat {
                 },
                 {
                     let mut it = f.args.iter().peekable();
-                    let width = it.next().map_or_else(|| quote!(1.0f32), Self::process_float);
+                    let width = it
+                        .next()
+                        .map_or_else(|| quote!(1.0f32), Self::process_float);
                     let colour = if it.peek().is_some() {
                         Self::process_colour(&it.cloned().collect())
                     } else if let Some((_, colour)) = self.attrs.iter().find(|(k, _)| *k == "color")
@@ -236,29 +246,49 @@ impl TextFormat {
             ),
             "valign" => (f.key.clone(), {
                 let value = f.get_one_arg()?;
-                expr2ident(value).map_or_else(
-                    || value.to_token_stream(),
-                    |value| match &*value.to_string() {
-                        "min" => quote! { egui::Align::Min },
-                        "center" | "centre" => quote! { egui::Align::Center },
-                        "max" => quote! { egui::Align::Max },
-                        _ => value.to_token_stream(),
-                    },
-                )
+                expr2ident(value)
+                    .and_then(|value| Self::align2tokens(&value.to_string()))
+                    .unwrap_or_else(|| value.to_token_stream())
+            }),
+
+            "size" => (Ident::new("font_id", f.key.span()), {
+                let size = Self::process_float(f.get_one_arg()?);
+                let default = &self.default;
+                quote! { egui::FontId::new(#size, #default.font_id.family.clone()) }
+            }),
+            "font_family" => (Ident::new("font_id", f.key.span()), {
+                let family = Self::process_font_family(f.get_one_arg()?);
+                let default = &self.default;
+                quote! { egui::FontId::new(#default.font_id.size, #family) }
+            }),
+            "prop" | "proportional" => (Ident::new("font_id", f.key.span()), {
+                let default = &self.default;
+                quote! { egui::FontId::new(#default.font_id.size, egui::FontFamily::Proportional) }
+            }),
+            "mono" | "monospace" => (Ident::new("font_id", f.key.span()), {
+                let default = &self.default;
+                quote! { egui::FontId::new(#default.font_id.size, egui::FontFamily::Monospace) }
             }),
             key => {
                 if let Ok(value) = f.get_one_arg() {
-                    (f.key.clone(), quote! {#value})
+                    (f.key.clone(), value.to_token_stream())
                 } else if f.args_count() == 0
-                    && let Some(colour) =
-                        Self::colour2tokens(key.strip_prefix("bg_").unwrap_or(key))
                 {
-                    let new_key = if key.starts_with("bg_") {
-                        "background"
+                    #[expect(clippy::option_if_let_else)]
+                    if let Some(colour) =
+                        Self::colour2tokens(key.strip_prefix("bg_").unwrap_or(key))
+                    {
+                        let new_key = if key.starts_with("bg_") {
+                            "background"
+                        } else {
+                            "color"
+                        };
+                        (Ident::new(new_key, f.key.span()), colour)
+                    } else if let Some(valign) = Self::align2tokens(key) {
+                        (Ident::new("valign", f.key.span()), valign)
                     } else {
-                        "color"
-                    };
-                    (Ident::new(new_key, f.key.span()), colour)
+                        (f.key.clone(), quote! { Default::default() })
+                    }
                 } else {
                     return Err(syn::Error::new(f.args.span(), ""));
                 }
@@ -407,7 +437,9 @@ impl InputSegment {
                 }
             }
             Self::FormatAttr {
-                attr: function, segments, ..
+                attr: function,
+                segments,
+                ..
             } => {
                 for segment in segments {
                     let mut text_format2 = text_format.to_owned();
