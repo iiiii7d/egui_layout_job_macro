@@ -1,6 +1,9 @@
 use std::os::unix::raw::dev_t;
 
-use egui::{Align, Color32, FontFamily, Stroke, TextFormat, epaint::text::VariationCoords, text::LayoutJob, hex_color};
+use egui::{
+    Align, Color32, FontFamily, Stroke, TextFormat, epaint::text::VariationCoords, hex_color,
+    text::LayoutJob,
+};
 use egui_layout_job_macro::layout_job;
 
 #[test]
@@ -278,7 +281,6 @@ fn format_color() {
     });
 }
 
-
 #[test]
 fn format_background() {
     assert_eq!(layout_job!(@background[1, 2, 3]("a")), {
@@ -288,6 +290,18 @@ fn format_background() {
             0.0,
             TextFormat {
                 background: Color32::from_rgb(1, 2, 3),
+                ..TextFormat::default()
+            },
+        );
+        l
+    });
+    assert_eq!(layout_job!(@bg_red("a")), {
+        let mut l = LayoutJob::default();
+        l.append(
+            "a",
+            0.0,
+            TextFormat {
+                background: Color32::RED,
                 ..TextFormat::default()
             },
         );
@@ -325,18 +339,6 @@ fn format_italics() {
         );
         l
     });
-    assert_eq!(layout_job!(@italics[true]("a")), {
-        let mut l = LayoutJob::default();
-        l.append(
-            "a",
-            0.0,
-            TextFormat {
-                italics: true,
-                ..TextFormat::default()
-            },
-        );
-        l
-    });
     assert_eq!(layout_job!(@italics[false]("a")), {
         let mut l = LayoutJob::default();
         l.append(
@@ -344,6 +346,18 @@ fn format_italics() {
             0.0,
             TextFormat {
                 italics: false,
+                ..TextFormat::default()
+            },
+        );
+        l
+    });
+    assert_eq!(layout_job!(@i("a")), {
+        let mut l = LayoutJob::default();
+        l.append(
+            "a",
+            0.0,
+            TextFormat {
+                italics: true,
                 ..TextFormat::default()
             },
         );
@@ -377,6 +391,31 @@ fn format_underline() {
         );
         l
     });
+    assert_eq!(layout_job!(@u[1]("a")), {
+        let mut l = LayoutJob::default();
+        l.append(
+            "a",
+            0.0,
+            TextFormat {
+                underline: Stroke::new(1.0f32, Color32::GRAY),
+                ..TextFormat::default()
+            },
+        );
+        l
+    });
+    assert_eq!(layout_job!(@red(@u("a"))), {
+        let mut l = LayoutJob::default();
+        l.append(
+            "a",
+            0.0,
+            TextFormat {
+                color: Color32::RED,
+                underline: Stroke::new(1.0f32, Color32::RED),
+                ..TextFormat::default()
+            },
+        );
+        l
+    });
 }
 
 #[test]
@@ -388,6 +427,18 @@ fn format_strikethrough() {
             0.0,
             TextFormat {
                 strikethrough: Stroke::new(1.0f32, Color32::from_rgb(1, 2, 3)),
+                ..TextFormat::default()
+            },
+        );
+        l
+    });
+    assert_eq!(layout_job!(@s[1]("a")), {
+        let mut l = LayoutJob::default();
+        l.append(
+            "a",
+            0.0,
+            TextFormat {
+                strikethrough: Stroke::new(1.0f32, Color32::GRAY),
                 ..TextFormat::default()
             },
         );

@@ -1,4 +1,3 @@
-use syn::parse::ParseBuffer;
 use std::collections::HashMap;
 
 use itertools::Itertools;
@@ -6,7 +5,7 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{ToTokens, TokenStreamExt, quote};
 use syn::{
     Expr, ExprAssign, ExprLit, ExprPath, Lit, LitByteStr, Token, bracketed, parenthesized,
-    parse::{End, Parse, ParseStream},
+    parse::{End, Parse, ParseBuffer, ParseStream},
     parse_macro_input,
     punctuated::Punctuated,
     spanned::Spanned,
@@ -29,13 +28,13 @@ impl TextFormat {
     pub fn new() -> Self {
         Self {
             attrs: HashMap::new(),
-            default: quote! { egui::text::TextFormat::default() }
+            default: quote! { egui::text::TextFormat::default() },
         }
     }
     pub fn new_with_default(default: TokenStream) -> Self {
         Self {
             attrs: HashMap::new(),
-            default
+            default,
         }
     }
 }
@@ -114,12 +113,13 @@ impl TextFormat {
                 if let Expr::Lit(ExprLit {
                     lit: Lit::Str(value),
                     ..
-                }) = value {
+                }) = value
+                {
                     quote! { egui::hex_color!(#value) }
                 } else {
-                    expr2ident(value).and_then(|value| Self::colour2tokens(&value.to_string())).unwrap_or_else(
-                        || value.to_token_stream(),
-                    )
+                    expr2ident(value)
+                        .and_then(|value| Self::colour2tokens(&value.to_string()))
+                        .unwrap_or_else(|| value.to_token_stream())
                 }
             }
             3 => {
@@ -176,7 +176,14 @@ impl TextFormat {
                     value => value.to_token_stream(),
                 },
             ),
-            "color" | "background" => (f.key.clone(), Self::process_colour(&f.args)),
+            key @ ("color" | "background" | "bg") => (
+                if key == "bg" {
+                    Ident::new("background", f.key.span())
+                } else {
+                    f.key.clone()
+                },
+                Self::process_colour(&f.args),
+            ),
             "coords" => (f.key.clone(), {
                 let values = f.args.iter().map(|kv| {
                     let Expr::Assign(ExprAssign { left, right, .. }) = kv else {
@@ -193,20 +200,39 @@ impl TextFormat {
                 });
                 quote! { egui::epaint::text::VariationCoords::new([#(#values),*]) }
             }),
-            "italics" => (
-                f.key.clone(),
+            key @ ("italics" | "i") => (
+                if key == "i" {
+                    Ident::new("italics", f.key.span())
+                } else {
+                    f.key.clone()
+                },
                 match f.args_count() {
                     0 => quote!(true),
                     1 => f.get_arg(0).to_token_stream(),
                     _ => return Err(syn::Error::new(f.args.span(), "")),
                 },
             ),
-            "underline" | "strikethrough" => (f.key.clone(), {
-                let mut it = f.args.iter();
-                let width = Self::process_float(it.next().expect(""));
-                let colour = Self::process_colour(&it.cloned().collect());
-                quote! { egui::Stroke::new(#width, #colour) }
-            }),
+            key @ ("underline" | "u" | "strikethrough" | "s") => (
+                match key {
+                    "u" => Ident::new("underline", f.key.span()),
+                    "s" => Ident::new("strikethrough", f.key.span()),
+                    _ => f.key.clone(),
+                },
+                {
+                    let mut it = f.args.iter().peekable();
+                    let width = it.next().map_or_else(|| quote!(1.0f32), Self::process_float);
+                    let colour = if it.peek().is_some() {
+                        Self::process_colour(&it.cloned().collect())
+                    } else if let Some((_, colour)) = self.attrs.iter().find(|(k, _)| *k == "color")
+                    {
+                        colour.clone()
+                    } else {
+                        let default = &self.default;
+                        quote! { #default.color }
+                    };
+                    quote! { egui::Stroke::new(#width, #colour) }
+                },
+            ),
             "valign" => (f.key.clone(), {
                 let value = f.get_one_arg()?;
                 expr2ident(value).map_or_else(
@@ -222,8 +248,16 @@ impl TextFormat {
             key => {
                 if let Ok(value) = f.get_one_arg() {
                     (f.key.clone(), quote! {#value})
-                } else if f.args_count() == 0 && let Some(colour) = Self::colour2tokens(key) {
-                    (Ident::new("color", f.key.span()), colour)
+                } else if f.args_count() == 0
+                    && let Some(colour) =
+                        Self::colour2tokens(key.strip_prefix("bg_").unwrap_or(key))
+                {
+                    let new_key = if key.starts_with("bg_") {
+                        "background"
+                    } else {
+                        "color"
+                    };
+                    (Ident::new(new_key, f.key.span()), colour)
                 } else {
                     return Err(syn::Error::new(f.args.span(), ""));
                 }
@@ -283,9 +317,7 @@ impl FormattingFunction {
         self.args.iter().count()
     }
     pub fn get_arg(&self, index: usize) -> &Expr {
-        self.args
-            .get(index)
-            .unwrap_or_else(|| unreachable!())
+        self.args.get(index).unwrap_or_else(|| unreachable!())
     }
     pub fn get_one_arg(&self) -> syn::Result<&Expr> {
         self.args
@@ -367,9 +399,7 @@ impl InputSegment {
                     #text_format,
                 );
             }),
-            Self::TextFormat {
-                expr, segments, ..
-            } => {
+            Self::TextFormat { expr, segments, .. } => {
                 for segment in segments {
                     let text_format2 = TextFormat::new_with_default(quote! { (#expr).clone() });
                     segment.tokens(tokens, &text_format2)?;
