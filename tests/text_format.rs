@@ -1,9 +1,6 @@
 use duplicate::duplicate_item;
-use egui::{
-    Align, Color32, FontFamily, FontId, Stroke, TextFormat, epaint::text::VariationCoords,
-    text::LayoutJob,
-};
-use egui_layout_job_macro::{layout_job, text_format};
+use egui::{Align, Color32, FontFamily, FontId, Stroke, TextFormat, epaint::text::VariationCoords};
+use egui_layout_job_macro::text_format;
 
 #[test]
 fn font_id_expr() {
@@ -252,7 +249,7 @@ fn valign_sugar_min() {
             valign: Align::Min,
             ..TextFormat::default()
         }
-    )
+    );
 }
 
 #[test]

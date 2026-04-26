@@ -1,9 +1,4 @@
-use std::os::unix::raw::dev_t;
-
-use egui::{
-    Align, Color32, FontFamily, Stroke, TextFormat, epaint::text::VariationCoords, hex_color,
-    text::LayoutJob,
-};
+use egui::{Color32, TextFormat, text::LayoutJob};
 use egui_layout_job_macro::{layout_job, text_format};
 
 #[test]
@@ -43,7 +38,7 @@ fn three_literals() {
 
 #[test]
 fn one_ident() {
-    let variable = 123456;
+    let variable = 123_456;
     assert_eq!(layout_job!(variable), {
         let mut l = LayoutJob::default();
         l.append(&variable.to_string(), 1.0, TextFormat::default());
@@ -53,7 +48,7 @@ fn one_ident() {
 
 #[test]
 fn variety() {
-    let variable = 123456;
+    let variable = 123_456;
     assert_eq!(
         layout_job!('a' variable format!("{:.2}", std::f32::consts::PI)),
         {
@@ -121,7 +116,7 @@ fn format_existing_text_format() {
         let mut l = LayoutJob::default();
         l.append("a", 1.0, tf);
         l
-    })
+    });
 }
 
 #[test]
@@ -130,5 +125,5 @@ fn raw() {
         let mut l = LayoutJob::default();
         l.append("a", 1.0, TextFormat::default());
         l
-    })
+    });
 }

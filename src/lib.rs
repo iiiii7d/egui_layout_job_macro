@@ -392,7 +392,7 @@ impl Parse for InputSegment {
             return Ok(Self::Raw {
                 pound_tok: input.parse()?,
                 tuple: input.parse()?,
-            })
+            });
         }
         if !input.peek(Token![@]) {
             return Ok(Self::Text(input.parse::<Expr>()?));
