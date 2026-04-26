@@ -1,0 +1,16 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "github>iiiii7d/renovate-config",
+    ":pinOnlyDevDependencies"
+  ],
+  "packageRules": [
+    {
+      "matchPackageNames": [
+        "/^egui(?!_layout_job_macro)/",
+        "eframe"
+      ],
+      "groupName": "egui-group"
+    }
+  ]
+}

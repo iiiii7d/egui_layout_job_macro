@@ -394,7 +394,7 @@ impl Parse for InputSegment {
                 tuple: input.parse()?,
             })
         }
-        if !(input.peek(Token![@])) {
+        if !input.peek(Token![@]) {
             return Ok(Self::Text(input.parse::<Expr>()?));
         }
 
