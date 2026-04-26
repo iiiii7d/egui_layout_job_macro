@@ -141,7 +141,7 @@ impl TextFormat {
             _ => panic!(),
         }
     }
-    fn process_float(input: &Expr) -> TokenStream {
+    pub(crate) fn process_float(input: &Expr) -> TokenStream {
         match input {
             Expr::Lit(ExprLit {
                 lit: Lit::Float(value),
@@ -379,7 +379,12 @@ enum InputSegment {
         parentheses: Paren,
         segments: Vec<Self>,
     },
-    Text(Expr),
+    Text {
+        text: Expr,
+        #[expect(dead_code)]
+        leading_space_tilde_tok: Option<Token![~]>,
+        leading_space: Option<Expr>,
+    },
     Raw {
         #[expect(dead_code)]
         pound_tok: Token![#],
@@ -394,8 +399,19 @@ impl Parse for InputSegment {
                 tuple: input.parse()?,
             });
         }
+        if input.peek(Token![~]) {
+            return Ok(Self::Text {
+                leading_space_tilde_tok: Some(input.parse()?),
+                leading_space: Some(input.parse()?),
+                text: input.parse()?,
+            })
+        }
         if !input.peek(Token![@]) {
-            return Ok(Self::Text(input.parse::<Expr>()?));
+            return Ok(Self::Text {
+                text: input.parse()?,
+                leading_space_tilde_tok: None,
+                leading_space: None,
+            });
         }
 
         let at_tok = input.parse()?;
@@ -445,13 +461,16 @@ impl InputSegment {
                 let (string, leading_space, text_format) = #tuple;
                 layout_job.append(string, leading_space, text_format);
             }),
-            Self::Text(expr) => tokens.append_all(quote! {
+            Self::Text { text, leading_space, .. } => {
+                let leading_space = leading_space.as_ref().map_or_else(|| quote!(1.0), |expr| TextFormat::process_float(expr));
+                tokens.append_all(quote! {
                 layout_job.append(
-                    &(#expr).to_string(),
-                    1.0,
+                    &(#text).to_string(),
+                    #leading_space,
                     #text_format,
                 );
-            }),
+            });
+            },
             Self::TextFormat { expr, segments, .. } => {
                 for segment in segments {
                     let text_format2 = TextFormat::new_with_default(quote! { (#expr).clone() });

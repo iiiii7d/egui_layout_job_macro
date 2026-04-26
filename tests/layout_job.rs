@@ -127,3 +127,13 @@ fn raw() {
         l
     });
 }
+
+#[test]
+fn leading_space() {
+    assert_eq!(layout_job!(~2 "a"), {
+        let mut l = LayoutJob::default();
+        l.append("a", 2.0, TextFormat::default());
+        l
+    });
+}
+
