@@ -404,7 +404,7 @@ impl Parse for InputSegment {
                 leading_space_tilde_tok: Some(input.parse()?),
                 leading_space: Some(input.parse()?),
                 text: input.parse()?,
-            })
+            });
         }
         if !input.peek(Token![@]) {
             return Ok(Self::Text {
@@ -461,16 +461,22 @@ impl InputSegment {
                 let (string, leading_space, text_format) = #tuple;
                 layout_job.append(string, leading_space, text_format);
             }),
-            Self::Text { text, leading_space, .. } => {
-                let leading_space = leading_space.as_ref().map_or_else(|| quote!(1.0), |expr| TextFormat::process_float(expr));
+            Self::Text {
+                text,
+                leading_space,
+                ..
+            } => {
+                let leading_space = leading_space
+                    .as_ref()
+                    .map_or_else(|| quote!(1.0), |expr| TextFormat::process_float(expr));
                 tokens.append_all(quote! {
-                layout_job.append(
-                    &(#text).to_string(),
-                    #leading_space,
-                    #text_format,
-                );
-            });
-            },
+                    layout_job.append(
+                        &(#text).to_string(),
+                        #leading_space,
+                        #text_format,
+                    );
+                });
+            }
             Self::TextFormat { expr, segments, .. } => {
                 for segment in segments {
                     let text_format2 = TextFormat::new_with_default(quote! { (#expr).clone() });

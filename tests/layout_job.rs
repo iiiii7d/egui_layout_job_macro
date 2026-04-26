@@ -136,4 +136,3 @@ fn leading_space() {
         l
     });
 }
-
