@@ -19,7 +19,7 @@ jobs:
         with:
           components: rustfmt
 
-      - run: cargo fmt --all-features --all-targets
+      - run: cargo fmt
 
       - uses: EndBug/add-and-commit@290ea2c423ad77ca9c62ae0f5b224379612c0321 # v10.0.0
         if: github.event_name != 'pull_request'
