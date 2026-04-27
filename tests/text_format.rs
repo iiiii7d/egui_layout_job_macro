@@ -42,7 +42,7 @@ fn font_id_sugar_size() {
 #[test]
 fn font_id_sugar_font_family() {
     assert_eq!(
-        text_format!(font_family[mono]),
+        text_format!(family[mono]),
         TextFormat {
             font_id: FontId::new(14.0, FontFamily::Monospace),
             ..TextFormat::default()

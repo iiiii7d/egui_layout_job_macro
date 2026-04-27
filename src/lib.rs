@@ -256,7 +256,7 @@ impl TextFormat {
                 let default = &self.default;
                 quote! { egui::FontId::new(#size, #default.font_id.family.clone()) }
             }),
-            "font_family" => (Ident::new("font_id", f.key.span()), {
+            "family" => (Ident::new("font_id", f.key.span()), {
                 let family = Self::process_font_family(f.get_one_arg()?);
                 let default = &self.default;
                 quote! { egui::FontId::new(#default.font_id.size, #family) }
@@ -468,7 +468,7 @@ impl InputSegment {
             } => {
                 let leading_space = leading_space
                     .as_ref()
-                    .map_or_else(|| quote!(1.0), |expr| TextFormat::process_float(expr));
+                    .map_or_else(|| quote!(0.0), TextFormat::process_float);
                 tokens.append_all(quote! {
                     layout_job.append(
                         &(#text).to_string(),
