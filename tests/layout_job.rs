@@ -67,7 +67,7 @@ fn from_existing_layout_job() {
         justify: true,
         ..LayoutJob::default()
     };
-    assert_eq!(layout_job!(in l2.clone(): 'a'), {
+    assert_eq!(layout_job!(use l2.clone(): 'a'), {
         let mut l = l2;
         l.append("a", 0.0, TextFormat::default());
         l

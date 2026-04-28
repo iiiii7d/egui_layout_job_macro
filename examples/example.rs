@@ -52,8 +52,14 @@ fn main() {
         let tf = text_format!(red, bg_white, underline, italics, size[20]);
         ui.label(layout_job!(@[tf]("This is probably very important")));
 
-        // a custom LayoutJob (pass in a tuple of (text, leading space, text format))
-        ui.label(layout_job!(#("Custom LayoutJob", 1.0, egui::TextFormat::default())));
+        // pre-defined LayoutJob
+        layout_job!(use egui::text::LayoutJob {
+            wrap: egui::text::TextWrapping::wrap_at_width(10.0),
+            ..egui::text::LayoutJob::default()
+        }: "Pre-defined LayoutJob");
+
+        // a custom segment (pass in a tuple of (text, leading space, text format))
+        ui.label(layout_job!(#("Custom LayoutJob segment", 1.0, egui::TextFormat::default())));
 
         // you can mix and nest all of the above
         ui.label(layout_job!("The " @i("quick") " " @bg_brown(@white("brown")) " " @u("fox") " " @extra_letter_spacing[10.0]("jumps") " " @mono("over") " the " @s("lazy") " " @size[10]("dog")));

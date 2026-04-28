@@ -1,3 +1,59 @@
+//! Macros for [egui](https://github.com/emilk/egui) `LayoutJob` and `TextFormat`.
+//!
+//! Documentation below assumes the following imports:
+//! ```rust
+//! use egui_layout_job_macro::{layout_job, text_format};
+//! use egui::text::LayoutJob;
+//! use egui::TextFormat;
+//! ```
+//! ## Simple
+//! Text is passed as literals or expressions with **no commas** between them. Each literal/expression must have a `.to_string()` method
+//! ```rust
+//! # use egui_layout_job_macro::layout_job;
+//! layout_job!("LayoutJob consisting of one segment");
+//!
+//! let num_segments = 3;
+//! layout_job!("LayoutJob consisting of " num_segments " segments");
+//! ```
+//!
+//! ## From pre-existing `LayoutJob`
+//! Useful if your `LayoutJob` requires settings or already has segments in it. Syntax for defining fields for `LayoutJob` directly in the macro is planned.
+//! ```rust
+//! # use egui_layout_job_macro::layout_job;
+//! # use egui::text::LayoutJob;
+//! use egui::text::TextWrapping;
+//! let lj = layout_job!(use LayoutJob {
+//!     wrap: TextWrapping::wrap_at_width(10.0),
+//!     ..LayoutJob::default()
+//! }: "Pre-defined LayoutJob");
+//! ```
+//!
+//! ## Formatting
+//! TODO
+//! ### Foreground & Background Colour
+//!
+//! ### Font ID (Family/Size)
+//!
+//! ### Italics
+//!
+//! ### Underline / Strikethrough
+//!
+//! ### Extra Letter Spacing / Expand Background
+//!
+//! ### Line Height
+//!
+//! ### Vertical Alignment
+//!
+//! ### Coords
+//!
+//! ### Custom `TextFormat`
+//!
+//! ## Leading Space
+//! TODO
+//!
+//! ## Custom Segment
+//! TODO
+
 use std::collections::HashMap;
 
 use itertools::Itertools;
@@ -300,7 +356,7 @@ impl TextFormat {
 
 struct InputLayoutJob {
     #[expect(dead_code)]
-    pub in_tok: Token![in],
+    pub use_tok: Token![use],
     pub contents: Expr,
     #[expect(dead_code)]
     pub colon_tok: Token![:],
@@ -308,7 +364,7 @@ struct InputLayoutJob {
 impl Parse for InputLayoutJob {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
-            in_tok: input.parse()?,
+            use_tok: input.parse()?,
             contents: input.parse()?,
             colon_tok: input.parse()?,
         })
@@ -505,7 +561,7 @@ struct InputArgs {
 }
 impl Parse for InputArgs {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let input_layout_job = if input.peek(Token![in]) {
+        let input_layout_job = if input.peek(Token![use]) {
             Some(InputLayoutJob::parse(input)?)
         } else {
             None
