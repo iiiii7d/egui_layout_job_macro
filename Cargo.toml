@@ -10,6 +10,7 @@ repository = "https://github.com/iiiii7d/egui_layout_job_macro"
 readme = "README.md"
 keywords = ["egui", "layout-job", 'text-format']
 categories = ["gui", "game-development", "development-tools"]
+rust-version = "1.85"
 
 [lib]
 proc-macro = true
