@@ -89,7 +89,7 @@
 //! # use egui_layout_job_macro::layout_job;
 //! layout_job!(@family[mono]("Monospace") @family[prop]("Proportional") @family["custom"]("Custom font family"));
 //! ```
-//! 
+//!
 //! `mono` and `prop` have shorthands:
 //! ```
 //! # use egui_layout_job_macro::layout_job;
