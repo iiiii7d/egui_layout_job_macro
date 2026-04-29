@@ -1,6 +1,6 @@
 # egui_layout_job_macro
 
-[![Crates.io Version](https://img.shields.io/crates/v/egui_layout_job_macro)](https://crates.io/crates/egui_lyaout_job_macro)
+[![Crates.io Version](https://img.shields.io/crates/v/egui_layout_job_macro)](https://crates.io/crates/egui_layout_job_macro)
 [![Github Version](https://img.shields.io/github/v/release/iiiii7d/egui_layout_job_macro)](https://github.com/iiiii7d/egui_layout_job_macro)
 ![Crates.io MSRV](https://img.shields.io/crates/msrv/egui_layout_job_macro)
 [![docs.rs](https://img.shields.io/docsrs/egui_layout_job_macro)](https://docs.rs/egui_layout_job_macro)
