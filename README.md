@@ -8,15 +8,15 @@
 
 ![GitHub code size](https://img.shields.io/github/languages/code-size/iiiii7d/egui_layout_job_macro)
 ![GitHub repo size](https://img.shields.io/github/repo-size/iiiii7d/egui_layout_job_macro)
-![GitHub last commit (branch)](https://img.shields.io/github/last-commit/iiiii7d/egui_layout_job_macro/main)
-![GitHub commits since latest release (branch)](https://img.shields.io/github/commits-since/iiiii7d/egui_layout_job_macro/latest/main?include_prereleases)
+![GitHub last commit (branch)](https://img.shields.io/github/last-commit/iiiii7d/egui_layout_job_macro/master)
+![GitHub commits since latest release (branch)](https://img.shields.io/github/commits-since/iiiii7d/egui_layout_job_macro/latest/master?include_prereleases)
 ![GitHub Release Date](https://img.shields.io/github/release-date/iiiii7d/egui_layout_job_macro)
 ![Libraries.io dependency status for GitHub repo](https://img.shields.io/librariesio/github/iiiii7d/egui_layout_job_macro)
 
 ![Crates.io Downloads (recent)](https://img.shields.io/crates/dr/egui_layout_job_macro)
 ![Crates.io Total Downloads](https://img.shields.io/crates/d/egui_layout_job_macro)
 
-> As you can see, constructing a LayoutJob is currently a lot of work. It would be nice to have a helper macro for it! *~ egui docs*
+> As you can see, constructing a LayoutJob is currently a lot of work. It would be nice to have a helper macro for it! ~egui docs
 
 Macros for [egui](https://github.com/emilk/egui) `LayoutJob` and `TextFormat`
 
