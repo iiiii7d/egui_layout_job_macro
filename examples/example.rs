@@ -43,7 +43,7 @@ fn main() {
         ui.label(layout_job!(@strikethrough("Strikethrough ") @s[2]("with custom width ") @s[2, red]("and colour")));
 
         // valign
-        ui.label(layout_job!(@valign[min]("Valign ") @max(" (shortcut)")));
+        ui.label(layout_job!(@size[10](@valign[top]("Valign") @bottom(" (shortcut)"))));
 
         // leading space (must be before a segment)
         ui.label(layout_job!("This has" ~10 "a lot of leading space"));

@@ -1,14 +1,14 @@
 //! Macros for [egui](https://github.com/emilk/egui) `LayoutJob` and `TextFormat`.
 //!
 //! Documentation below assumes the following imports:
-//! ```rust
+//! ```
 //! use egui_layout_job_macro::{layout_job, text_format};
 //! use egui::text::LayoutJob;
 //! use egui::TextFormat;
 //! ```
 //! ## Simple
-//! Text is passed as literals or expressions with **no commas** between them. Each literal/expression must have a `.to_string()` method
-//! ```rust
+//! Text is passed into [`layout_job`] as literals or expressions with **no commas** between them. Each literal/expression must have a `.to_string()` method
+//! ```
 //! # use egui_layout_job_macro::layout_job;
 //! layout_job!("LayoutJob consisting of one segment");
 //!
@@ -18,7 +18,7 @@
 //!
 //! ## From pre-existing `LayoutJob`
 //! Useful if your `LayoutJob` requires settings or already has segments in it. Syntax for defining fields for `LayoutJob` directly in the macro is planned.
-//! ```rust
+//! ```
 //! # use egui_layout_job_macro::layout_job;
 //! # use egui::text::LayoutJob;
 //! use egui::text::TextWrapping;
@@ -29,30 +29,165 @@
 //! ```
 //!
 //! ## Formatting
-//! TODO
+//! Formatting syntax was inspired by LaTeX and Typst.
+//!
+//! In [`layout_job`], formatting functions have a `@` prefix, optionally take arguments inside square brackets `[]` and are applied to segments inside parentheses `()`.
+//! Each function's arguments inside `[]` may have their own syntax. Formatting functions can be nested.
+//! ```custom
+//! @format(...) <- functions with no arguments
+//! @format[...](...) <- functions with arguments
+//! ```
+//!
+//! To get a `TextFormat` of just the formatting (no segments or text to format), use [`text_format`] and list the functions without the `@` prefix and **separated by commas**:
+//! ```
+//! # use egui_layout_job_macro::text_format;
+//! let tf = text_format!(red, u[2]);
+//! ```
+//!
 //! ### Foreground & Background Colour
+//! The full form is
+//! ```ignore
+//! layout_job!(@color[args...](...) @background[args...](...));
+//! ```
+//!
+//! For pre-defined colours in `egui::Color32`, just write the name of the colour in the args in snake case.
+//! ```
+//! # use egui_layout_job_macro::layout_job;
+//! layout_job!(@color[light_green]("light green text") @background[light_green]("light green background"));
+//! ```
+//!
+//! Pre-defined colours have a shorter form. For background colours prepend `bg_`:
+//! ```
+//! # use egui_layout_job_macro::layout_job;
+//! layout_job!(@light_green("light green text") @bg_light_green("light green background"));
+//! ```
+//!
+//! For custom colours, you can do so using the hex value (requires `egui` feature `color-hex`), RGB or RGBA:
+//! ```
+//! # use egui_layout_job_macro::layout_job;
+//! layout_job!(@color["90ee90"]("this is ") @color[144, 238, 144]("all ") @color[144, 238, 144, 255]("light green"));
+//! ```
+//!
+//! `color` and `background` have shorthands:
+//! ```
+//! # use egui_layout_job_macro::layout_job;
+//! layout_job!(@color[red]("these all ") @colour[red]("specify ") @col[red]("colour"));
+//! layout_job!(@background[red]("and these ") @bg[red]("specify background"));
+//! ```
 //!
 //! ### Font ID (Family/Size)
+//! A `FontID` is made of a font size (float) and a font family (see below). However, you can specify only the size and the font family.
+//! ```
+//! # use egui_layout_job_macro::layout_job;
+//! layout_job!(@font_id[20, mono]("Monospace with size 20"));
+//! layout_job!(@size[20]("Size 20 only"));
+//! layout_job!(@family[mono]("Monospace only"));
+//! ```
+//!
+//! For font families, the three options are `mono`, `prop` and custom family (any other expressions or literals)
+//! ```
+//! # use egui_layout_job_macro::layout_job;
+//! layout_job!(@family[mono]("Monospace") @family[prop]("Proportional") @family["custom"]("Custom font family"));
+//! ```
+//! 
+//! `mono` and `prop` have shorthands:
+//! ```
+//! # use egui_layout_job_macro::layout_job;
+//! layout_job!(@mono("Monospace") @prop("Proportional"));
+//! ```
 //!
 //! ### Italics
+//! Most basic is just `italics` or `i`:
+//! ```
+//! # use egui_layout_job_macro::layout_job;
+//! layout_job!(@italics("italics") @i("also italics"));
+//! ```
+//!
+//! It accepts one optional boolean argument to toggle italics (for e.g. italics off in the middle of italicised text)
+//! ```
+//! # use egui_layout_job_macro::layout_job;
+//! layout_job!(@i[false]("not italics"));
+//! ```
 //!
 //! ### Underline / Strikethrough
+//! Most basic is just `underline`/`strikethrough` or `u`/`s`, defaulting to width 1.0 and same colour as the text:
+//! ```
+//! # use egui_layout_job_macro::layout_job;
+//! layout_job!(@underline("underline") @u("also underline"));
+//! layout_job!(@strikethrough("strikethrough") @s("also strikethrough"));
+//! ```
+//!
+//! Both accept optional arguments. The first is the width of the line (float):
+//! ```
+//! # use egui_layout_job_macro::layout_job;
+//! layout_job!(@u[2]("thick underline") @s[2]("thick strikethrough"));
+//! ```
+//!
+//! The second argument onwards is the colour of the line. See "Foreground & Background Colour" for the syntax.
+//! ```
+//! # use egui_layout_job_macro::layout_job;
+//! layout_job!(@u[2, red]("red underline") @s[2, 255, 0, 0]("red strikethrough"));
+//! ```
 //!
 //! ### Extra Letter Spacing / Expand Background
+//! Both accept one optional float argument.
+//! ```
+//! # use egui_layout_job_macro::layout_job;
+//! layout_job!(@extra_letter_spacing[2]("extra letter spacing") @expand_bg[2]("expand background"));
+//! ```
 //!
 //! ### Line Height
+//! Similar to the above, but any non-literal expression passed to it must be an `Option`.
+//! ```
+//! # use egui_layout_job_macro::layout_job;
+//! layout_job!(@line_height[2]("line height 2") @line_height[None]("default line height"));
+//! ```
 //!
 //! ### Vertical Alignment
+//! Possible options are `min`, `centre`/`center`, `max`, `top`, `bottom` and any custom literal/expression that is an `egui::Align`.
+//! A `super` and `sub` function that combines this with `size` is planned for the future.
+//! ```
+//! # use egui_layout_job_macro::layout_job;
+//! layout_job!(@valign[top]("superscript") @valign[bottom]("subscript"));
+//! layout_job!(@top("these are ") @bottom("shorthands"));
+//! ```
 //!
 //! ### Coords
+//! I have no clue what this does, but I have implemented a syntax anyway. The special format for arguments is `key=value`,... where `key` is a bytestring that can be specified with or without byte quotes (`b""`), and `value` is a float.
+//! ```
+//! # use egui_layout_job_macro::layout_job;
+//! layout_job!(@coords[wght=500,b"wdth"=75]("weight=500, width=75"));
+//! ```
 //!
 //! ### Custom `TextFormat`
+//! The syntax is `@[text_format_expr](...)`. Useful for pre-defining `TextFormat` combinations and using them throughout your project.
+//! ```
+//! # use egui_layout_job_macro::{layout_job, text_format};
+//! let impt = text_format!(white, bg_red, u, i);
+//! layout_job!(@[impt]("this is very important"));
+//! ```
 //!
 //! ## Leading Space
-//! TODO
+//! The default leading space before each segment is 0.0. You can specify a custom leading space with the syntax `~number` before any segment.
+//! ```
+//! # use egui_layout_job_macro::layout_job;
+//! layout_job!("This leaves" ~10 "a lot of space");
+//! ```
+//!
+//! Note that this cannot be done before a *formatting function*.
+//! ```compile_fail
+//! # use egui_layout_job_macro::layout_job;
+//! layout_job!("This should not" ~10 @red("be done"));
+//! ```
 //!
 //! ## Custom Segment
-//! TODO
+//! Fundamentally, appending a segment requires 1. a segment of text, 2. a leading space, 3. a `TextFormat`. You can pass all 3 directly as a tuple of `(text, leading space, text format)` with `#expression`:
+//! ```
+//! # use egui_layout_job_macro::layout_job;
+//! # use egui::TextFormat;
+//! let segment = ("custom segment", 1.0, TextFormat::default());
+//! layout_job!("This is a " #segment);
+//! ```
 
 use std::collections::HashMap;
 
@@ -167,6 +302,8 @@ impl TextFormat {
             "min" => quote! { egui::Align::Min },
             "center" | "centre" => quote! { egui::Align::Center },
             "max" => quote! { egui::Align::Max },
+            "top" => quote! { egui::Align::TOP },
+            "bottom" => quote! { egui::Align::BOTTOM },
             _ => return None,
         })
     }
