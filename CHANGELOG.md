@@ -1,0 +1,7 @@
+# Changelog
+
+## Coming soon
+* `LayoutJob` parameters inside `layout_job` macro
+
+## v0.1.0-rc.0 (20260429)
+Initial release
