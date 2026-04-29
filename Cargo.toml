@@ -1,6 +1,6 @@
 [package]
 name = "egui_layout_job_macro"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2024"
 description = "Macros for egui LayoutJob and TextFormat"
 authors = ["7d <61975820+iiiii7d@users.noreply.github.com>"]
@@ -16,11 +16,11 @@ rust-version = "1.85"
 proc-macro = true
 
 [dependencies]
-proc-macro2 = "=1.0.106"
-syn = { version = "=2.0.117", features = ["full"] }
-quote = "=1.0.45"
+proc-macro2 = "1.0"
+syn = { version = "2.0", features = ["full"] }
+quote = "1.0"
 
-itertools = "=0.14.0"
+itertools = "0.14.0"
 
 [dev-dependencies]
 egui = { version = "=0.34.1", features = ["color-hex"] }
