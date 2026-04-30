@@ -38,6 +38,25 @@
 //! @format[...](...) <- functions with arguments
 //! ```
 //!
+//! Arguments accept either literals, identifiers or expressions dpeending on the function command.
+//! For float fields, integers and floats will be automatically cast to `f32`, and everything else is treated as an expression and will not be cast automatically to f32. (Note that negative integers currently do not work and will be fixed in a future release)
+//! Some fields have identifiers as possible values (e.g. colours, backgrounds). Any unrecognised identifier is assumed to be an expression.
+//! To force an argument to be an expression, wrap it in parentheses `()`.
+//! ```custom
+//! // expand_bg accepts one float
+//! @expand_bg[2.0](...) <- OK
+//! @expand_bg[2](...) <- OK
+//! @expand_bg[(2.0f32)](...) <- OK
+//! @expand_bg[float_variable](...) <- OK if variable exists
+//! @expand_bg["hello"](...) <- NOT OK
+//!
+//! // col (1 argument) accepts one Color32
+//! @col[red](...) <- OK
+//! @col[egui::Color32::RED](...) <- OK
+//! @col[(red)](...) <- OK, variable `red` will be used
+//! @col[magic](...) <- OK if variable `magic` does not exist, NOT OK if not
+//! ```
+//!
 //! To get a `TextFormat` of just the formatting (no segments or text to format), use [`text_format`] and list the functions without the `@` prefix and **separated by commas**:
 //! ```
 //! # use egui_layout_job_macro::text_format;
@@ -446,21 +465,49 @@ impl TextFormat {
 
             "size" => (Ident::new("font_id", f.key.span()), {
                 let size = Self::process_float(f.get_one_arg()?);
-                let default = &self.default;
-                quote! { egui::FontId::new(#size, #default.font_id.family.clone()) }
+                let family = if let Some((_, font_id)) = self.attrs.iter().find(|(key, _)| *key == "font_id") {
+                    quote! { #font_id.family.clone() }
+                } else if let Some((_, family)) = self.attrs.iter().find(|(key, _)| *key == "family") {
+                    quote! { #family.clone() }
+                } else {
+                    let default = &self.default;
+                    quote! { #default.font_id.family.clone() }
+                };
+                quote! { egui::FontId::new(#size, #family) }
             }),
             "family" => (Ident::new("font_id", f.key.span()), {
                 let family = Self::process_font_family(f.get_one_arg()?);
-                let default = &self.default;
-                quote! { egui::FontId::new(#default.font_id.size, #family) }
+                let size = if let Some((_, font_id)) = self.attrs.iter().find(|(key, _)| *key == "font_id") {
+                    quote! { #font_id.size }
+                } else if let Some((_, size)) = self.attrs.iter().find(|(key, _)| *key == "size") {
+                    size.clone()
+                } else {
+                    let default = &self.default;
+                    quote! { #default.font_id.size }
+                };
+                quote! { egui::FontId::new(#size, #family) }
             }),
             "prop" | "proportional" => (Ident::new("font_id", f.key.span()), {
-                let default = &self.default;
-                quote! { egui::FontId::new(#default.font_id.size, egui::FontFamily::Proportional) }
+                let size = if let Some((_, font_id)) = self.attrs.iter().find(|(key, _)| *key == "font_id") {
+                    quote! { #font_id.size }
+                } else if let Some((_, size)) = self.attrs.iter().find(|(key, _)| *key == "size") {
+                    size.clone()
+                } else {
+                    let default = &self.default;
+                    quote! { #default.font_id.size }
+                };
+                quote! { egui::FontId::new(#size, egui::FontFamily::Proportional) }
             }),
             "mono" | "monospace" => (Ident::new("font_id", f.key.span()), {
-                let default = &self.default;
-                quote! { egui::FontId::new(#default.font_id.size, egui::FontFamily::Monospace) }
+                let size = if let Some((_, font_id)) = self.attrs.iter().find(|(key, _)| *key == "font_id") {
+                    quote! { #font_id.size }
+                } else if let Some((_, size)) = self.attrs.iter().find(|(key, _)| *key == "size") {
+                    size.clone()
+                } else {
+                    let default = &self.default;
+                    quote! { #default.font_id.size }
+                };
+                quote! { egui::FontId::new(#size, egui::FontFamily::Monospace) }
             }),
             key => {
                 if let Ok(value) = f.get_one_arg() {

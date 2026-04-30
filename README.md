@@ -25,6 +25,7 @@ Macros for [egui](https://github.com/emilk/egui) `LayoutJob` and `TextFormat`
 cargo add egui_layout_job_macro
 ```
 Macros are tested on the egui pinned in `Cargo.toml`, but it should theoretically work on any past and future releases.
+Make sure `egui` is installed and available in your project
 
 ## Usage
 ```rust
