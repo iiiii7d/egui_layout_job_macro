@@ -40,7 +40,7 @@ fn font_id_sugar_size() {
     );
 }
 #[test]
-fn font_id_sugar_font_family() {
+fn font_id_sugar_family() {
     assert_eq!(
         text_format!(family[mono]),
         TextFormat {
@@ -58,6 +58,14 @@ fn font_id_sugar_mono() {
             ..TextFormat::default()
         }
     );
+}
+#[test]
+fn font_id_sugar_size_family() {
+    assert_eq!(text_format!(mono, size[20]), text_format!(font_id[20, mono]));
+}
+#[test]
+fn font_id_sugar_family_size() {
+    assert_eq!(text_format!(size[20], mono), text_format!(font_id[20, mono]));
 }
 
 #[duplicate_item(
