@@ -908,7 +908,7 @@ dependencies = [
 
 [[package]]
 name = "egui_layout_job_macro"
-version = "0.1.0-rc.3"
+version = "0.1.0"
 dependencies = [
  "duplicate",
  "eframe",
