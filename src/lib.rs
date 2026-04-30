@@ -1,13 +1,13 @@
 //! Macros for [egui](https://github.com/emilk/egui) `LayoutJob` and `TextFormat`.
 //!
-//! Documentation below assumes the following imports:
+//! Documentation below assumes `egui` is installed and available, as well as the following imports:
 //! ```
 //! use egui_layout_job_macro::{layout_job, text_format};
 //! use egui::text::LayoutJob;
 //! use egui::TextFormat;
 //! ```
 //! ## Simple
-//! Text is passed into [`layout_job`] as literals or expressions with **no commas** between them. Each literal/expression must have a `.to_string()` method
+//! Text is passed into [`layout_job`] as literals or expressions with **no commas** between them. Each literal/expression must have a `.to_string()` method.
 //! ```
 //! # use egui_layout_job_macro::layout_job;
 //! layout_job!("LayoutJob consisting of one segment");
@@ -218,7 +218,6 @@ use syn::{
     parse::{End, Parse, ParseBuffer, ParseStream},
     parse_macro_input,
     punctuated::Punctuated,
-    spanned::Spanned,
     token::{Bracket, Paren},
 };
 
@@ -326,8 +325,8 @@ impl TextFormat {
             _ => return None,
         })
     }
-    fn process_colour(input: &Punctuated<Expr, Token![,]>) -> TokenStream {
-        match input.iter().count() {
+    fn process_colour(input: &Punctuated<Expr, Token![,]>) -> syn::Result<TokenStream> {
+        Ok(match input.iter().count() {
             1 => {
                 let value = input.get(0).unwrap();
                 if let Expr::Lit(ExprLit {
@@ -350,8 +349,13 @@ impl TextFormat {
                 let (r, g, b, a) = input.iter().collect_tuple().unwrap();
                 quote! { egui::Color32::from_rgba_unmultiplied(#r, #g, #b, #a) }
             }
-            _ => panic!(),
-        }
+            count => {
+                return Err(syn::Error::new_spanned(
+                    input,
+                    format!("Did not expect {count} args for colour"),
+                ));
+            }
+        })
     }
     pub(crate) fn process_float(input: &Expr) -> TokenStream {
         match input {
@@ -377,7 +381,12 @@ impl TextFormat {
                         let family = Self::process_font_family(f.get_arg(1));
                         quote! { egui::FontId::new(#size, #family) }
                     }
-                    _ => return Err(syn::Error::new(f.args.span(), "")),
+                    count => {
+                        return Err(syn::Error::new_spanned(
+                            &f.args,
+                            format!("Did not expect {count} args"),
+                        ));
+                    }
                 }
             }),
             "extra_letter_spacing" | "expand_bg" => {
@@ -403,22 +412,30 @@ impl TextFormat {
                     "bg" => Ident::new("background", f.key.span()),
                     _ => f.key.clone(),
                 },
-                Self::process_colour(&f.args),
+                Self::process_colour(&f.args)?,
             ),
             "coords" => (f.key.clone(), {
-                let values = f.args.iter().map(|kv| {
-                    let Expr::Assign(ExprAssign { left, right, .. }) = kv else {
-                        panic!();
-                    };
-                    let right = Self::process_float(right);
-                    expr2ident(left).map_or_else(
-                        || quote! { (#left, #right) },
-                        |left| {
-                            let left = LitByteStr::new(left.to_string().as_bytes(), left.span());
-                            quote! { (#left, #right) }
-                        },
-                    )
-                });
+                let values = f
+                    .args
+                    .iter()
+                    .map(|kv| {
+                        let Expr::Assign(ExprAssign { left, right, .. }) = kv else {
+                            return Err(syn::Error::new_spanned(
+                                kv,
+                                "Not key-value pair, e.g. `key=value`",
+                            ));
+                        };
+                        let right = Self::process_float(right);
+                        Ok(expr2ident(left).map_or_else(
+                            || quote! { (#left, #right) },
+                            |left| {
+                                let left =
+                                    LitByteStr::new(left.to_string().as_bytes(), left.span());
+                                quote! { (#left, #right) }
+                            },
+                        ))
+                    })
+                    .collect::<syn::Result<Vec<_>>>()?;
                 quote! { egui::epaint::text::VariationCoords::new([#(#values),*]) }
             }),
             key @ ("italics" | "i") => (
@@ -430,7 +447,12 @@ impl TextFormat {
                 match f.args_count() {
                     0 => quote!(true),
                     1 => f.get_arg(0).to_token_stream(),
-                    _ => return Err(syn::Error::new(f.args.span(), "")),
+                    count => {
+                        return Err(syn::Error::new_spanned(
+                            &f.args,
+                            format!("Did not expect {count} args"),
+                        ));
+                    }
                 },
             ),
             key @ ("underline" | "u" | "strikethrough" | "s") => (
@@ -445,7 +467,7 @@ impl TextFormat {
                         .next()
                         .map_or_else(|| quote!(1.0f32), Self::process_float);
                     let colour = if it.peek().is_some() {
-                        Self::process_colour(&it.cloned().collect())
+                        Self::process_colour(&it.cloned().collect())?
                     } else if let Some((_, colour)) = self.attrs.iter().find(|(k, _)| *k == "color")
                     {
                         colour.clone()
@@ -479,46 +501,29 @@ impl TextFormat {
                 };
                 quote! { egui::FontId::new(#size, #family) }
             }),
-            "family" => (Ident::new("font_id", f.key.span()), {
-                let family = Self::process_font_family(f.get_one_arg()?);
-                let size = if let Some((_, font_id)) =
-                    self.attrs.iter().find(|(key, _)| *key == "font_id")
-                {
-                    quote! { #font_id.size }
-                } else if let Some((_, size)) = self.attrs.iter().find(|(key, _)| *key == "size") {
-                    size.clone()
-                } else {
-                    let default = &self.default;
-                    quote! { #default.font_id.size }
-                };
-                quote! { egui::FontId::new(#size, #family) }
-            }),
-            "prop" | "proportional" => (Ident::new("font_id", f.key.span()), {
-                let size = if let Some((_, font_id)) =
-                    self.attrs.iter().find(|(key, _)| *key == "font_id")
-                {
-                    quote! { #font_id.size }
-                } else if let Some((_, size)) = self.attrs.iter().find(|(key, _)| *key == "size") {
-                    size.clone()
-                } else {
-                    let default = &self.default;
-                    quote! { #default.font_id.size }
-                };
-                quote! { egui::FontId::new(#size, egui::FontFamily::Proportional) }
-            }),
-            "mono" | "monospace" => (Ident::new("font_id", f.key.span()), {
-                let size = if let Some((_, font_id)) =
-                    self.attrs.iter().find(|(key, _)| *key == "font_id")
-                {
-                    quote! { #font_id.size }
-                } else if let Some((_, size)) = self.attrs.iter().find(|(key, _)| *key == "size") {
-                    size.clone()
-                } else {
-                    let default = &self.default;
-                    quote! { #default.font_id.size }
-                };
-                quote! { egui::FontId::new(#size, egui::FontFamily::Monospace) }
-            }),
+            key @ ("family" | "prop" | "proportional" | "mono" | "monospace") => {
+                (Ident::new("font_id", f.key.span()), {
+                    let family = match key {
+                        "prop" | "proportional" => quote! { egui::FontFamily::Proportional },
+                        "mono" | "monospace" => quote! { egui::FontFamily::Monospace },
+                        "family" => Self::process_font_family(f.get_one_arg()?),
+                        _ => unreachable!(),
+                    };
+                    let size = if let Some((_, font_id)) =
+                        self.attrs.iter().find(|(key, _)| *key == "font_id")
+                    {
+                        quote! { #font_id.size }
+                    } else if let Some((_, size)) =
+                        self.attrs.iter().find(|(key, _)| *key == "size")
+                    {
+                        size.clone()
+                    } else {
+                        let default = &self.default;
+                        quote! { #default.font_id.size }
+                    };
+                    quote! { egui::FontId::new(#size, #family) }
+                })
+            }
             key => {
                 if let Ok(value) = f.get_one_arg() {
                     (f.key.clone(), value.to_token_stream())
@@ -539,7 +544,7 @@ impl TextFormat {
                         (f.key.clone(), quote! { Default::default() })
                     }
                 } else {
-                    return Err(syn::Error::new(f.args.span(), ""));
+                    return Err(syn::Error::new_spanned(&f.key, "Unknown key"));
                 }
             }
         };
@@ -579,7 +584,7 @@ impl Parse for FormatAttr {
             let brackets = bracketed!(content in input);
             let argument = content.parse_terminated(ParseBuffer::parse, Token![,])?;
             if !content.peek(End) {
-                return Err(content.error(""));
+                return Err(content.error("Expected end of bracketed content"));
             }
             (Some(brackets), argument)
         } else {
@@ -603,10 +608,9 @@ impl FormatAttr {
         self.args.get(index).unwrap_or_else(|| unreachable!())
     }
     pub fn get_one_arg(&self) -> syn::Result<&Expr> {
-        self.args
-            .iter()
-            .exactly_one()
-            .map_err(|_e| syn::Error::new(self.args.span(), ""))
+        self.args.iter().exactly_one().map_err(|e| {
+            syn::Error::new_spanned(&self.args, format!("Did not get one argument: {e}"))
+        })
     }
 }
 
@@ -670,7 +674,7 @@ impl Parse for InputSegment {
             let brackets = bracketed!(content in input);
             let expr = content.parse()?;
             if !content.peek(End) {
-                return Err(content.error(""));
+                return Err(content.error("Expected end of bracketed content"));
             }
 
             let content;
@@ -773,10 +777,17 @@ impl Parse for InputArgs {
 
 #[proc_macro]
 pub fn layout_job(tokens: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let InputArgs {
+    layout_job_(parse_macro_input!(tokens as InputArgs))
+        .unwrap_or_else(syn::Error::into_compile_error)
+        .into()
+}
+
+fn layout_job_(
+    InputArgs {
         input_layout_job,
         segments,
-    } = parse_macro_input!(tokens as InputArgs);
+    }: InputArgs,
+) -> syn::Result<TokenStream> {
     let layout_job_tokens = if let Some(InputLayoutJob {
         contents: input_layout_job,
         ..
@@ -789,22 +800,28 @@ pub fn layout_job(tokens: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let mut segment_tokens = TokenStream::new();
     let text_format = TextFormat::new();
     for segment in segments {
-        segment.tokens(&mut segment_tokens, &text_format).unwrap();
+        segment.tokens(&mut segment_tokens, &text_format)?;
     }
-    quote! {{
+    Ok(quote! {{
         let mut layout_job = #layout_job_tokens;
         #segment_tokens
         layout_job
-    }}
-    .into()
+    }})
 }
 
 #[proc_macro]
 pub fn text_format(tokens: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let attrs = parse_macro_input!(tokens with Punctuated<FormatAttr, Token![,]>::parse_terminated);
+    text_format_(
+        parse_macro_input!(tokens with Punctuated<FormatAttr, Token![,]>::parse_terminated),
+    )
+    .unwrap_or_else(syn::Error::into_compile_error)
+    .into()
+}
+
+fn text_format_(attrs: Punctuated<FormatAttr, Token![,]>) -> syn::Result<TokenStream> {
     let mut tf = TextFormat::new();
     for attr in attrs {
-        tf.insert(&attr).unwrap();
+        tf.insert(&attr)?;
     }
-    tf.to_token_stream().into()
+    Ok(tf.to_token_stream())
 }
