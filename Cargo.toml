@@ -1,6 +1,6 @@
 [package]
 name = "egui_layout_job_macro"
-version = "0.1.0-rc.1"
+version = "0.1.0-rc.2"
 edition = "2024"
 description = "Macros for egui LayoutJob and TextFormat"
 authors = ["7d <61975820+iiiii7d@users.noreply.github.com>"]
