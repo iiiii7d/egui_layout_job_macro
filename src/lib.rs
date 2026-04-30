@@ -465,9 +465,13 @@ impl TextFormat {
 
             "size" => (Ident::new("font_id", f.key.span()), {
                 let size = Self::process_float(f.get_one_arg()?);
-                let family = if let Some((_, font_id)) = self.attrs.iter().find(|(key, _)| *key == "font_id") {
+                let family = if let Some((_, font_id)) =
+                    self.attrs.iter().find(|(key, _)| *key == "font_id")
+                {
                     quote! { #font_id.family.clone() }
-                } else if let Some((_, family)) = self.attrs.iter().find(|(key, _)| *key == "family") {
+                } else if let Some((_, family)) =
+                    self.attrs.iter().find(|(key, _)| *key == "family")
+                {
                     quote! { #family.clone() }
                 } else {
                     let default = &self.default;
@@ -477,7 +481,9 @@ impl TextFormat {
             }),
             "family" => (Ident::new("font_id", f.key.span()), {
                 let family = Self::process_font_family(f.get_one_arg()?);
-                let size = if let Some((_, font_id)) = self.attrs.iter().find(|(key, _)| *key == "font_id") {
+                let size = if let Some((_, font_id)) =
+                    self.attrs.iter().find(|(key, _)| *key == "font_id")
+                {
                     quote! { #font_id.size }
                 } else if let Some((_, size)) = self.attrs.iter().find(|(key, _)| *key == "size") {
                     size.clone()
@@ -488,7 +494,9 @@ impl TextFormat {
                 quote! { egui::FontId::new(#size, #family) }
             }),
             "prop" | "proportional" => (Ident::new("font_id", f.key.span()), {
-                let size = if let Some((_, font_id)) = self.attrs.iter().find(|(key, _)| *key == "font_id") {
+                let size = if let Some((_, font_id)) =
+                    self.attrs.iter().find(|(key, _)| *key == "font_id")
+                {
                     quote! { #font_id.size }
                 } else if let Some((_, size)) = self.attrs.iter().find(|(key, _)| *key == "size") {
                     size.clone()
@@ -499,7 +507,9 @@ impl TextFormat {
                 quote! { egui::FontId::new(#size, egui::FontFamily::Proportional) }
             }),
             "mono" | "monospace" => (Ident::new("font_id", f.key.span()), {
-                let size = if let Some((_, font_id)) = self.attrs.iter().find(|(key, _)| *key == "font_id") {
+                let size = if let Some((_, font_id)) =
+                    self.attrs.iter().find(|(key, _)| *key == "font_id")
+                {
                     quote! { #font_id.size }
                 } else if let Some((_, size)) = self.attrs.iter().find(|(key, _)| *key == "size") {
                     size.clone()
