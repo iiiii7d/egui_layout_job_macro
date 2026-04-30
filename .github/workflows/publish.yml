@@ -10,11 +10,12 @@ jobs:
     permissions:
       contents: read
 
-  version:
+  version-changelog:
     runs-on: ubuntu-latest
     needs: test
     outputs:
       version: ${{ steps.version.outputs.version }}
+      changelog: ${{ steps.changelog.outputs.changelog }}
     permissions:
       contents: read
 
@@ -40,7 +41,7 @@ jobs:
 
   github-release:
     runs-on: ubuntu-latest
-    needs: [test, version]
+    needs: [test, version-changelog]
     permissions:
       contents: write
 
@@ -51,12 +52,15 @@ jobs:
       - run: cargo package
       - uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
         with:
-          tag_name: ${{ needs.version.outputs.version }}
+          tag_name: ${{ needs.version-changelog.outputs.version }}
+          name: ${{ needs.version-changelog.outputs.version }}
+          body: ${{ needs.version-changelog.outputs.changelog }}
           files: target/package/*.crate
+          generate_release_notes: true
 
   crates-io:
     runs-on: ubuntu-latest
-    needs: test
+    needs: [test, version-changelog]
     environment: crates
     permissions:
       contents: read
@@ -74,7 +78,7 @@ jobs:
 
   delete-github-release:
     runs-on: ubuntu-latest
-    needs: [ test, version, github-release, crates-io ]
+    needs: [ test, version-changelog, github-release, crates-io ]
     if: ${{ always() && contains(needs.*.result, 'failure') }}
     permissions:
       contents: write
