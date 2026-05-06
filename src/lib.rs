@@ -775,6 +775,7 @@ impl Parse for InputArgs {
     }
 }
 
+#[cfg_attr(test, no_panic::no_panic)]
 #[proc_macro]
 pub fn layout_job(tokens: proc_macro::TokenStream) -> proc_macro::TokenStream {
     layout_job_(parse_macro_input!(tokens as InputArgs))
@@ -809,6 +810,7 @@ fn layout_job_(
     }})
 }
 
+#[cfg_attr(test, no_panic::no_panic)]
 #[proc_macro]
 pub fn text_format(tokens: proc_macro::TokenStream) -> proc_macro::TokenStream {
     text_format_(

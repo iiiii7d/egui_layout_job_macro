@@ -26,6 +26,7 @@ itertools = "0.14.0"
 egui = { version = "=0.34.1", features = ["color-hex"] }
 eframe = "=0.34.1"
 duplicate = "=2.0.1"
+no-panic = "=0.1.36"
 
 [lints.rust]
 future-incompatible = "deny"
