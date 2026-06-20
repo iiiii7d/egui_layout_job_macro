@@ -81,7 +81,7 @@ jobs:
 
   delete-github-release:
     runs-on: ubuntu-latest
-    needs: [ test, version-changelog, github-release, crates-io ]
+    needs: [test, version-changelog, github-release, crates-io]
     if: ${{ always() && contains(needs.*.result, 'failure') }}
     permissions:
       contents: write

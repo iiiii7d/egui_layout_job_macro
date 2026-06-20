@@ -21,16 +21,20 @@
 Macros for [egui](https://github.com/emilk/egui) `LayoutJob` and `TextFormat`
 
 ## Installation
+
 ```bash
 cargo add egui_layout_job_macro
 ```
+
 Macros are tested on the egui pinned in `Cargo.toml`, but it should theoretically work on any past and future releases.
 Make sure `egui` is installed and available in your project
 
 ## Usage
+
 ```rust
 use egui_layout_job_macro::layout_job;
 
 layout_job!(@size[14](@white("Hello ") @mono(@black("World!"))));
 ```
+
 See the [documentation](https://docs.rs/egui_layout_job_macro) and [`example.rs`](https://github.com/iiiii7d/egui_layout_job_macro/blob/master/examples/example.rs) for more examples.

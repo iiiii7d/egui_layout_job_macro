@@ -6,11 +6,7 @@
   ],
   "packageRules": [
     {
-      "matchPackageNames": [
-        "/^egui/",
-        "eframe",
-        "!egui_layout_job_macro"
-      ],
+      "matchPackageNames": ["/^egui/", "eframe", "!egui_layout_job_macro"],
       "groupName": "egui-group"
     }
   ]
