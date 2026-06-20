@@ -5,6 +5,10 @@
 * `super` and `sub` commands
 * automatically cast negative integer literals to float
 
+## v0.1.1 (20260620)
+- migrate to mise and hk
+- widen itertools versions
+
 ## v0.1.0 (20260501)
 Initial (stable) release
 
