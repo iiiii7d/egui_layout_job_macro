@@ -16,11 +16,11 @@ rust-version = "1.85"
 proc-macro = true
 
 [dependencies]
-proc-macro2 = "1.0"
-syn = { version = "2.0", features = ["full"] }
-quote = "1.0"
+proc-macro2 = "~1.0.91"
+syn = { version = "~2.0.98", features = ["full"] }
+quote = "~1.0.36"
 
-itertools = "0.15.0"
+itertools = ">=0.10.0, <0.16.0"
 
 [dev-dependencies]
 egui = { version = "=0.34.3", features = ["color-hex"] }
@@ -37,13 +37,13 @@ pedantic = "warn"
 cargo = "warn"
 nursery = "warn"
 
-missing_errors_doc = { level="allow", priority = 1 }
-missing_panics_doc = { level="allow", priority = 1 }
-cast_precision_loss = { level="allow", priority = 1 }
-cast_possible_truncation = { level="allow", priority = 1 }
-module_name_repetitions = { level="allow", priority = 1 }
-multiple_crate_versions = { level="allow", priority = 1 }
-cognitive_complexity = { level="allow", priority = 1 }
+missing_errors_doc = { level = "allow", priority = 1 }
+missing_panics_doc = { level = "allow", priority = 1 }
+cast_precision_loss = { level = "allow", priority = 1 }
+cast_possible_truncation = { level = "allow", priority = 1 }
+module_name_repetitions = { level = "allow", priority = 1 }
+multiple_crate_versions = { level = "allow", priority = 1 }
+cognitive_complexity = { level = "allow", priority = 1 }
 
 allow_attributes = "warn"
 arithmetic_side_effects = "warn"
