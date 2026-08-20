@@ -1,0 +1,22 @@
+name: Mirror
+
+on: [push, delete, create]
+
+concurrency:
+  group: git-mirror
+
+jobs:
+  mirror-tangled:
+    runs-on: ubuntu-latest
+    environment: mirror-tangled
+    permissions:
+      contents: read
+
+    steps:
+      - uses: wearerequired/git-mirror-action@6bbc55f2f0082bca533b72dc711f7d37154d40cc # v1.3.1
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          # SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        with:
+          source-repo: "https://github.com/iiiii7d/egui-layout-job-macro"
+          destination-repo: "${{ secrets.TARGET_REPO_URL }}"
