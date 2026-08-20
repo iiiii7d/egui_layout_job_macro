@@ -18,5 +18,5 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           # SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
         with:
-          source-repo: "https://github.com/iiiii7d/egui-layout-job-macro"
+          source-repo: "https://github.com/iiiii7d/egui_layout_job_macro"
           destination-repo: "${{ secrets.TARGET_REPO_URL }}"
