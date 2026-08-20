@@ -1,6 +1,11 @@
 name: Mirror
 
-on: [push, delete, create]
+on:
+  create:
+  delete:
+  push:
+    branches: '**'
+    tags: '**'
 
 concurrency:
   group: git-mirror
