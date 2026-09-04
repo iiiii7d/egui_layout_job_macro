@@ -29,7 +29,7 @@ duplicate = "=2.0.1"
 no-panic = "=0.1.37"
 
 [lints.rust]
-future-incompatible = "deny"
+future_incompatible = "deny"
 
 [lints.clippy]
 all = "warn"
