@@ -1,5 +1,5 @@
-name: Setup Rust
-description: "Set up rust nightly"
+name: Mise
+description: Mise
 
 inputs:
   envs:
@@ -21,7 +21,7 @@ runs:
   steps:
     - id: mise-env
       shell: bash
-      run: echo "MISE_ENV=$ENVS" > "$GITHUB_ENV" # zizmor: ignore[github-env]
+      run: echo "MISE_ENV=$(echo $ENVS | tr -d '\n')" >> "$GITHUB_ENV" # zizmor: ignore[github-env]
       env:
         ENVS: ${{ inputs.envs }}
 
@@ -34,6 +34,3 @@ runs:
     - id: cache-rust
       if: inputs.cache
       uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-
-    - run: mise install rust --force
-      shell: bash

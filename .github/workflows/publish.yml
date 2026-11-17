@@ -4,6 +4,11 @@ on:
     tags: ["**"]
   workflow_dispatch:
 
+permissions: {}
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
   test:
     uses: $/.github/workflows/test.yml
