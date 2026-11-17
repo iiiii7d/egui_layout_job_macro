@@ -13,6 +13,7 @@ concurrency:
 
 jobs:
   mirror-tangled:
+    name: Tangled
     runs-on: ubuntu-latest
     environment: mirror-tangled
     permissions:
